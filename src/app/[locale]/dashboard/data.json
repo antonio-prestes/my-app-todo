@@ -1,0 +1,47 @@
+[
+  {
+    "id": "TSK-001",
+    "title": "Build the Notion-like Table View",
+    "status": "InProgress",
+    "priority": "High",
+    "assignee": "Diego Prestes",
+    "dueDate": "2026-04-10",
+    "tags": ["Frontend", "Feature"]
+  },
+  {
+    "id": "TSK-002",
+    "title": "Configure Internationalization (i18n)",
+    "status": "Review",
+    "priority": "High",
+    "assignee": "Diego Prestes",
+    "dueDate": "2026-04-09",
+    "tags": ["Setup", "Feature"]
+  },
+  {
+    "id": "TSK-003",
+    "title": "Design Kanban View layout",
+    "status": "Todo",
+    "priority": "Medium",
+    "assignee": "Unassigned",
+    "dueDate": "2026-04-15",
+    "tags": ["Design", "UI/UX"]
+  },
+  {
+    "id": "TSK-004",
+    "title": "Implement drag-and-drop for Kanban",
+    "status": "Todo",
+    "priority": "Low",
+    "assignee": "Unassigned",
+    "dueDate": "2026-04-18",
+    "tags": ["Frontend", "Enhancement"]
+  },
+  {
+    "id": "TSK-005",
+    "title": "Fix user authentication bug",
+    "status": "Done",
+    "priority": "High",
+    "assignee": "Emily Whalen",
+    "dueDate": "2026-04-05",
+    "tags": ["Bug", "Backend"]
+  }
+]

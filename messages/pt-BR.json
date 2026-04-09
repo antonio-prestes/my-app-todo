@@ -1,0 +1,51 @@
+{
+  "Auth": {
+    "welcome": "Bem-vindo de volta",
+    "loginDescription": "Faça login na sua conta",
+    "email": "E-mail",
+    "password": "Senha",
+    "forgotPassword": "Esqueceu sua senha?",
+    "loginButton": "Entrar",
+    "continueWith": "Ou continue com",
+    "noAccount": "Não tem uma conta?",
+    "signUpLink": "Cadastre-se",
+    "termsText": "Ao continuar, você concorda com nossos",
+    "terms": "Termos de Serviço",
+    "and": "e",
+    "privacy": "Política de Privacidade",
+    "createAccount": "Criar uma conta",
+    "signUpDescription": "Cadastre-se para começar",
+    "name": "Nome Completo",
+    "signUpButton": "Criar Conta",
+    "haveAccount": "Já possui uma conta?",
+    "loginLink": "Entrar"
+  },
+  "Tasks": {
+    "title": "Tarefas",
+    "description": "Gerencie suas tarefas e projetos em um layout estilo Notion.",
+    "addTask": "Adicionar Tarefa",
+    "status": "Status",
+    "priority": "Prioridade",
+    "assignee": "Responsável",
+    "dueDate": "Vencimento",
+    "tags": "Tags",
+    "searchPlaceholder": "Buscar tarefas..."
+  },
+  "Navigation": {
+    "dashboard": "Painel",
+    "settings": "Configurações",
+    "login": "Entrar",
+    "language": "Idioma",
+    "tableView": "Tabela de Tarefas",
+    "kanbanView": "Quadro Kanban"
+  },
+  "TaskFields": {
+    "Todo": "A Fazer",
+    "InProgress": "Em Progresso",
+    "Review": "Em Revisão",
+    "Done": "Feito",
+    "Low": "Baixa",
+    "Medium": "Média",
+    "High": "Alta"
+  }
+}

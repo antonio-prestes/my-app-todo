@@ -1,0 +1,51 @@
+{
+  "Auth": {
+    "welcome": "Welcome back",
+    "loginDescription": "Login to your account",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot your password?",
+    "loginButton": "Login",
+    "continueWith": "Or continue with",
+    "noAccount": "Don't have an account?",
+    "signUpLink": "Sign up",
+    "termsText": "By clicking continue, you agree to our",
+    "terms": "Terms of Service",
+    "and": "and",
+    "privacy": "Privacy Policy",
+    "createAccount": "Create an account",
+    "signUpDescription": "Sign up to get started",
+    "name": "Full Name",
+    "signUpButton": "Create Account",
+    "haveAccount": "Already have an account?",
+    "loginLink": "Login"
+  },
+  "Tasks": {
+    "title": "Tasks",
+    "description": "Manage your tasks and projects in a Notion-style layout.",
+    "addTask": "Add Task",
+    "status": "Status",
+    "priority": "Priority",
+    "assignee": "Assignee",
+    "dueDate": "Due Date",
+    "tags": "Tags",
+    "searchPlaceholder": "Search tasks..."
+  },
+  "Navigation": {
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "login": "Login",
+    "language": "Language",
+    "tableView": "Table View",
+    "kanbanView": "Kanban Board"
+  },
+  "TaskFields": {
+    "Todo": "To Do",
+    "InProgress": "In Progress",
+    "Review": "Review",
+    "Done": "Done",
+    "Low": "Low",
+    "Medium": "Medium",
+    "High": "High"
+  }
+}
