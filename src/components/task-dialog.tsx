@@ -22,15 +22,37 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import { Calendar } from "@/components/ui/calendar"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { useTranslations } from "next-intl"
+import { format, parseISO } from "date-fns"
+import { CalendarIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { updateTask } from "@/app/actions/tasks"
 
-export function CreateTaskDialog({ children }: { children: React.ReactNode }) {
+export function TaskDialog({ children, task }: { children: React.ReactNode, task?: any }) {
   const tFields = useTranslations("TaskFields")
   const router = useRouter()
   const [open, setOpen] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
-  const [tags, setTags] = React.useState<string[]>([])
+  const [tags, setTags] = React.useState<string[]>(task?.tags || [])
   const [tagInput, setTagInput] = React.useState("")
+  const [date, setDate] = React.useState<Date | undefined>(
+    task?.dueDate ? parseISO(task.dueDate) : undefined
+  )
+
+  const isEdit = !!task;
+
+  React.useEffect(() => {
+    if (open) {
+      setTags(task?.tags || []);
+      setDate(task?.dueDate ? parseISO(task.dueDate) : undefined);
+    }
+  }, [open, task]);
 
   function handleTagKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' || e.key === ',') {
@@ -56,7 +78,6 @@ export function CreateTaskDialog({ children }: { children: React.ReactNode }) {
     const status = formData.get("status") as string
     const priority = formData.get("priority") as string
     const assignee = formData.get("assignee") as string
-    const dueDate = formData.get("dueDate") as string
 
     if (!title) {
       setLoading(false)
@@ -64,21 +85,34 @@ export function CreateTaskDialog({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      await createTask({
+      const payload = {
         title,
         status: status || "Todo",
         priority: priority || "Medium",
         tags,
         assignee: assignee || "Eu",
-        dueDate: dueDate || undefined
-      })
-      setOpen(false)
-      setTags([])
-      setTagInput("")
-      router.refresh()
+        dueDate: date ? format(date, "yyyy-MM-dd") : undefined
+      };
+
+      if (isEdit) {
+         await updateTask(task.id, payload);
+      } else {
+         await createTask(payload);
+      }
+      
+      // Suave closing emulation
+      setTimeout(() => {
+        setOpen(false)
+        if (!isEdit) {
+          setTags([])
+          setTagInput("")
+          setDate(undefined)
+        }
+        router.refresh()
+        setLoading(false)
+      }, 500)
     } catch (err) {
       console.error(err)
-    } finally {
       setLoading(false)
     }
   }
@@ -90,20 +124,20 @@ export function CreateTaskDialog({ children }: { children: React.ReactNode }) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Nova Tarefa</DialogTitle>
+          <DialogTitle>{isEdit ? "Editar Tarefa" : "Nova Tarefa"}</DialogTitle>
           <DialogDescription>
-            Preencha os dados abaixo para adicionar uma nova demanda ao quadro.
+            {isEdit ? "Edite as informações da sua demanda do quadro." : "Preencha os dados abaixo para adicionar uma nova demanda ao quadro."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="grid gap-4 py-4">
           <Field>
             <FieldLabel htmlFor="title">Título da Tarefa</FieldLabel>
-            <Input id="title" name="title" placeholder="Descreva sua tarefa aqui..." required disabled={loading} />
+            <Input id="title" name="title" defaultValue={task?.title || ""} placeholder="Descreva sua tarefa aqui..." required disabled={loading} />
           </Field>
           <div className="grid grid-cols-2 gap-4">
              <Field>
                 <FieldLabel htmlFor="status">Status Definição</FieldLabel>
-                <Select name="status" defaultValue="Todo" disabled={loading}>
+                <Select name="status" defaultValue={task?.status || "Todo"} disabled={loading}>
                   <SelectTrigger id="status">
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
@@ -117,7 +151,7 @@ export function CreateTaskDialog({ children }: { children: React.ReactNode }) {
              </Field>
              <Field>
                 <FieldLabel htmlFor="priority">Prioridade</FieldLabel>
-                <Select name="priority" defaultValue="Medium" disabled={loading}>
+                <Select name="priority" defaultValue={task?.priority || "Medium"} disabled={loading}>
                   <SelectTrigger id="priority">
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
@@ -132,11 +166,33 @@ export function CreateTaskDialog({ children }: { children: React.ReactNode }) {
           <div className="grid grid-cols-2 gap-4">
              <Field>
                 <FieldLabel htmlFor="assignee">Responsável</FieldLabel>
-                <Input id="assignee" name="assignee" defaultValue="Eu" placeholder="Digite o nome..." disabled={loading} />
+                <Input id="assignee" name="assignee" defaultValue={task?.assignee || "Eu"} placeholder="Digite o nome..." disabled={loading} />
              </Field>
              <Field>
                 <FieldLabel htmlFor="dueDate">Prazo de Entrega</FieldLabel>
-                <Input id="dueDate" name="dueDate" type="date" disabled={loading} />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal pl-3",
+                        !date && "text-muted-foreground"
+                      )}
+                      disabled={loading}
+                    >
+                      {date ? format(date, "PPP") : <span>Escolha a data</span>}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
              </Field>
           </div>
           <Field>
@@ -161,7 +217,7 @@ export function CreateTaskDialog({ children }: { children: React.ReactNode }) {
           </Field>
           <div className="flex justify-end mt-4">
             <Button type="submit" disabled={loading}>
-              {loading ? "Criando..." : "Criar Tarefa"}
+              {loading ? "Salvando..." : (isEdit ? "Aplicar Mudanças" : "Criar Tarefa")}
             </Button>
           </div>
         </form>

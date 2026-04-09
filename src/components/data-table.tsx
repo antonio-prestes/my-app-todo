@@ -25,6 +25,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuTrigger,
+  DropdownMenuItem
 } from "@/components/ui/dropdown-menu"
 import {
   Table,
@@ -43,7 +44,21 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Columns3Icon, ChevronDownIcon, ClockIcon, FlagIcon, MoreHorizontalIcon, CircleIcon, UserIcon, HashIcon } from "lucide-react"
+import { TaskDialog } from "@/components/task-dialog"
+import { deleteTask } from "@/app/actions/tasks"
+import { useRouter } from "next/navigation"
 
 export const schema = z.object({
   id: z.string(),
@@ -69,11 +84,69 @@ function getStatusIcon(status: string) {
 export function DataTable({ data }: { data: Task[] }) {
   const tTasks = useTranslations("Tasks")
   const tFields = useTranslations("TaskFields")
+  const router = useRouter()
 
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
+
+  const ActionCell = ({ task }: { task: Task }) => {
+    const [isDeleting, setIsDeleting] = React.useState(false);
+
+    const handleDelete = async () => {
+      setIsDeleting(true);
+      try {
+        await deleteTask(task.id);
+        router.refresh();
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setIsDeleting(false);
+      }
+    };
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <span className="sr-only">Open menu</span>
+            <MoreHorizontalIcon className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-[160px]">
+          {/* Edit Dialog Trigger integrated locally */}
+          <TaskDialog task={task}>
+            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer">
+              Editar Tarefa
+            </DropdownMenuItem>
+          </TaskDialog>
+          {/* Delete Dialog embedded accurately */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-500 focus:bg-red-50 focus:text-red-500 cursor-pointer">
+                Excluir Tarefa
+              </DropdownMenuItem>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Tem absoluta certeza?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação não pode ser desfeita. A tarefa <strong>{task.title}</strong> será deletada dos servidores finais de forma permanente.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Voltar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-red-500 hover:bg-red-600 text-white">
+                  {isDeleting ? "Deletando..." : "Sim, excluir"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    )
+  }
 
   const columns: ColumnDef<Task>[] = [
     {
@@ -226,6 +299,10 @@ export function DataTable({ data }: { data: Task[] }) {
           </div>
         )
       }
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => <ActionCell task={row.original} />
     }
   ]
 
@@ -271,7 +348,7 @@ export function DataTable({ data }: { data: Task[] }) {
             <DropdownMenuContent align="end" className="w-32">
               {table
                 .getAllColumns()
-                .filter((column) => column.getCanHide())
+                .filter((column) => column.getCanHide() && column.id !== "actions")
                 .map((column) => {
                   return (
                     <DropdownMenuCheckboxItem

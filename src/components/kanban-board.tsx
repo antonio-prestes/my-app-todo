@@ -154,10 +154,15 @@ function KanbanColumn({ status, tasks }: { status: Status; tasks: Task[] }) {
 export function KanbanBoard({ data }: { data: Task[] }) {
   const [tasks, setTasks] = React.useState<Task[]>(data);
   const [activeTask, setActiveTask] = React.useState<Task | null>(null);
+  const [isMounted, setIsMounted] = React.useState(false);
 
   React.useEffect(() => {
     setTasks(data);
   }, [data]);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -207,6 +212,10 @@ export function KanbanBoard({ data }: { data: Task[] }) {
       return arrayMove(tasks, oldIndex, newIndex);
     });
   };
+
+  if (!isMounted) {
+    return <div className="w-full h-full min-h-[500px]" />;
+  }
 
   return (
     <div className="w-full overflow-x-auto px-4 lg:px-6 pb-8">
