@@ -2,13 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, usePathname } from '@/i18n/routing';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 export function LanguageSwitcher() {
   const t = useTranslations('Navigation');
@@ -21,14 +15,32 @@ export function LanguageSwitcher() {
   }
 
   return (
-    <Select defaultValue={locale} onValueChange={onSelectChange}>
-      <SelectTrigger className="w-[120px] h-8 bg-transparent border-transparent hover:bg-input/50">
-        <SelectValue placeholder={t('language')} />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="en">English (US)</SelectItem>
-        <SelectItem value="pt-BR">Português (BR)</SelectItem>
-      </SelectContent>
-    </Select>
+    <TooltipProvider>
+      <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => onSelectChange("en")}
+              className={`flex h-7 w-8 items-center justify-center rounded-md transition-all ${locale === 'en' ? 'bg-background shadow-sm opacity-100' : 'opacity-50 hover:opacity-100 hover:bg-background/50'}`}
+            >
+              <span className="text-lg leading-none">🇺🇸</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top">English</TooltipContent>
+        </Tooltip>
+        
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => onSelectChange("pt-BR")}
+              className={`flex h-7 w-8 items-center justify-center rounded-md transition-all ${locale === 'pt-BR' ? 'bg-background shadow-sm opacity-100' : 'opacity-50 hover:opacity-100 hover:bg-background/50'}`}
+            >
+              <span className="text-lg leading-none">🇧🇷</span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top">Português</TooltipContent>
+        </Tooltip>
+      </div>
+    </TooltipProvider>
   );
 }

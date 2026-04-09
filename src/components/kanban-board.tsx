@@ -53,10 +53,14 @@ function KanbanItem({
     >
       <CardContent className="p-4 flex flex-col gap-3">
         <p className="font-medium text-sm leading-tight">{task.title}</p>
-        <div className="flex items-center justify-between mt-1">
-          <Badge variant="outline" className="text-xs font-normal">
-            {task.id}
-          </Badge>
+        <div className="flex items-start justify-between mt-1">
+          <div className="flex gap-1 flex-wrap max-w-[170px]">
+            {(task.tags || []).map((tag, idx) => (
+               <Badge key={idx} variant="secondary" className="font-normal text-[10px] py-0.5 px-1.5">
+                 {tag}
+               </Badge>
+            ))}
+          </div>
           <div className="flex gap-2">
             {task.priority === "High" && (
               <FlagIcon className="size-4 text-red-500" />
@@ -75,8 +79,12 @@ function KanbanItem({
             <span className="truncate max-w-[80px]">{task.assignee}</span>
           </div>
           <div className="flex items-center gap-1">
-            <ClockIcon className="size-3" />
-            <span>{task.dueDate}</span>
+            {task.dueDate && (
+              <>
+                <ClockIcon className="size-3" />
+                <span>{task.dueDate}</span>
+              </>
+            )}
           </div>
         </div>
       </CardContent>
@@ -191,26 +199,40 @@ export function KanbanBoard({ data }: { data: Task[] }) {
 
     if (activeId === overId) return;
 
-    setTasks((tasks) => {
-      const oldIndex = tasks.findIndex((t) => t.id === activeId);
-      const isOverColumn = STATUSES.includes(overId as Status);
-      const newIndex = isOverColumn ? -1 : tasks.findIndex((t) => t.id === overId);
+    const oldIndex = tasks.findIndex((t) => t.id === activeId);
+    const isOverColumn = STATUSES.includes(overId as Status);
+    const newIndex = isOverColumn ? -1 : tasks.findIndex((t) => t.id === overId);
 
-      const activeTask = tasks[oldIndex];
-      const newStatus = isOverColumn ? (overId as Status) : tasks[newIndex]?.status;
+    const activeTaskElem = tasks[oldIndex];
+    if (!activeTaskElem) return;
 
-      if (!activeTask || !newStatus) return tasks;
+    const newStatus = isOverColumn ? (overId as Status) : tasks[newIndex]?.status;
 
-      if (activeTask.status !== newStatus) {
-        activeTask.status = newStatus;
-        updateTaskStatus(activeTask.id, newStatus).catch((err) => {
-          console.error("Failed to commit drop to Database:", err);
-        });
-      }
+    if (newStatus && activeTaskElem.status !== newStatus) {
+      // Execute background asynchronous Next.js Server Action BEFORE setting pure state
+      updateTaskStatus(activeTaskElem.id, newStatus).catch((err) => {
+        console.error("Failed to commit drop to Database:", err);
+      });
 
-      if (isOverColumn) return [...tasks];
-      return arrayMove(tasks, oldIndex, newIndex);
-    });
+      // Execute State Update pattern cleanly
+      setTasks((prevTasks) => {
+        const nextTasks = [...prevTasks];
+        const currentOldIndex = nextTasks.findIndex((t) => t.id === activeId);
+        const currentNewIndex = isOverColumn ? -1 : nextTasks.findIndex((t) => t.id === overId);
+
+        nextTasks[currentOldIndex] = { ...nextTasks[currentOldIndex], status: newStatus };
+
+        if (isOverColumn) return nextTasks;
+        return arrayMove(nextTasks, currentOldIndex, currentNewIndex);
+      });
+    } else {
+      // No status translation, just visual move
+      setTasks((prevTasks) => {
+        const currentOldIndex = prevTasks.findIndex((t) => t.id === activeId);
+        const currentNewIndex = prevTasks.findIndex((t) => t.id === overId);
+        return arrayMove(prevTasks, currentOldIndex, currentNewIndex);
+      });
+    }
   };
 
   if (!isMounted) {

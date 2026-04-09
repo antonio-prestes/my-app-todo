@@ -370,9 +370,6 @@ export function DataTable({ data }: { data: Task[] }) {
                 })}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button size="sm">
-             {tTasks("addTask")}
-          </Button>
         </div>
       </div>
       <div className="rounded-md border bg-card">

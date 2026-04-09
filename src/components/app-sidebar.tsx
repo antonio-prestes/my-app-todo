@@ -17,13 +17,13 @@ import {
 } from "@/components/ui/sidebar"
 import { CommandIcon, LayoutListIcon, KanbanSquareIcon } from "lucide-react"
 
-const userMock = {
+const defaultUserMock = {
   name: "Acme User",
   email: "admin@example.com",
   avatar: "/avatars/shadcn.jpg",
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sidebar> & { user?: any }) {
   const tNav = useTranslations("Navigation")
   const searchParams = useSearchParams()
   const view = searchParams.get("view")
@@ -64,7 +64,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={navMain} />
       </SidebarContent>
       <SidebarFooter>
-         <NavUser user={userMock} />
+         <NavUser user={user ? { name: user.name || "User", email: user.email || "", avatar: user.image || "https://github.com/shadcn.png" } : defaultUserMock} />
       </SidebarFooter>
     </Sidebar>
   )
