@@ -25,6 +25,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CircleIcon, ClockIcon, UserIcon, FlagIcon } from "lucide-react";
+import { updateTaskStatus } from "@/app/actions/tasks";
 
 // Types
 import { schema } from "./data-table";
@@ -189,6 +190,11 @@ export function KanbanBoard({ data }: { data: Task[] }) {
       // If dropping over a different status column (or item in it)
       if (activeTask && overTask && activeTask.status !== overTask.status) {
         activeTask.status = overTask.status;
+        
+        // Execute background asynchronous Next.js Server Action
+        updateTaskStatus(activeTask.id, overTask.status).catch((err) => {
+          console.error("Failed to commit drop to Database:", err);
+        });
       }
 
       return arrayMove(tasks, oldIndex, newIndex);

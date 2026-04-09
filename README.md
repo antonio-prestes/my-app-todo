@@ -24,10 +24,21 @@ Para rodar o projeto localmente por enquanto, você apenas precisará do Node.js
 npm install
 ```
 
-3. Inicie o servidor de desenvolvimento na sua máquina:
+3. **Configuração de Banco de Dados (Neon Postgres):**
+   A aplicação utiliza Drizzle ORM atrelado a um Serverless PostgreSQL Auth. 
+   - Renomeie ou faça uma cópia do arquivo `.env.example` e chame-o de `.env.local` na raiz do projeto.
+   - Abra o `.env.local` e defina suas chaves:
+     - `DATABASE_URL`: A sua URL de conexão fornecida no painel do Neon Postgres.
+     - `AUTH_SECRET`: Uma string aleatória forte (gerada para a Criptografia das sessões).
+   - Feito isso, mande a estrutura das tabelas para o banco usando o comando Drizzle: 
+     ```bash
+     npx drizzle-kit push
+     ```
+
+4. Inicie o servidor de desenvolvimento na sua máquina:
 
 ```bash
 npm run dev
 ```
 
-4. Acesse [http://localhost:3000](http://localhost:3000) pelo seu navegador de preferência.
+5. Acesse [http://localhost:3000](http://localhost:3000) pelo seu navegador de preferência.
