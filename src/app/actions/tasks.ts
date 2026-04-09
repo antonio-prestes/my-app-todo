@@ -15,7 +15,7 @@ export async function getTasks() {
 }
 
 // Create
-export async function createTask(data: { title: string, status?: string, priority?: string }) {
+export async function createTask(data: { title: string, status?: string, priority?: string, tags?: string[], assignee?: string, dueDate?: string }) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 

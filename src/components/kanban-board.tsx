@@ -12,6 +12,7 @@ import {
   useSensors,
   DragStartEvent,
   DragEndEvent,
+  useDroppable
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -109,6 +110,7 @@ function SortableTask({ task }: { task: Task }) {
 // Column Component
 function KanbanColumn({ status, tasks }: { status: Status; tasks: Task[] }) {
   const tFields = useTranslations("TaskFields");
+  const { setNodeRef } = useDroppable({ id: status });
 
   return (
     <div className="flex w-72 flex-col rounded-lg bg-muted/50 p-4">
@@ -139,7 +141,7 @@ function KanbanColumn({ status, tasks }: { status: Status; tasks: Task[] }) {
         items={tasks.map((t) => t.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="flex flex-1 flex-col min-h-[150px]">
+        <div ref={setNodeRef} className="flex flex-1 flex-col min-h-[150px]">
           {tasks.map((task) => (
             <SortableTask key={task.id} task={task} />
           ))}
@@ -152,6 +154,10 @@ function KanbanColumn({ status, tasks }: { status: Status; tasks: Task[] }) {
 export function KanbanBoard({ data }: { data: Task[] }) {
   const [tasks, setTasks] = React.useState<Task[]>(data);
   const [activeTask, setActiveTask] = React.useState<Task | null>(null);
+
+  React.useEffect(() => {
+    setTasks(data);
+  }, [data]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -182,21 +188,22 @@ export function KanbanBoard({ data }: { data: Task[] }) {
 
     setTasks((tasks) => {
       const oldIndex = tasks.findIndex((t) => t.id === activeId);
-      const newIndex = tasks.findIndex((t) => t.id === overId);
+      const isOverColumn = STATUSES.includes(overId as Status);
+      const newIndex = isOverColumn ? -1 : tasks.findIndex((t) => t.id === overId);
 
       const activeTask = tasks[oldIndex];
-      const overTask = tasks[newIndex];
+      const newStatus = isOverColumn ? (overId as Status) : tasks[newIndex]?.status;
 
-      // If dropping over a different status column (or item in it)
-      if (activeTask && overTask && activeTask.status !== overTask.status) {
-        activeTask.status = overTask.status;
-        
-        // Execute background asynchronous Next.js Server Action
-        updateTaskStatus(activeTask.id, overTask.status).catch((err) => {
+      if (!activeTask || !newStatus) return tasks;
+
+      if (activeTask.status !== newStatus) {
+        activeTask.status = newStatus;
+        updateTaskStatus(activeTask.id, newStatus).catch((err) => {
           console.error("Failed to commit drop to Database:", err);
         });
       }
 
+      if (isOverColumn) return [...tasks];
       return arrayMove(tasks, oldIndex, newIndex);
     });
   };

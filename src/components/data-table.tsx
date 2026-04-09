@@ -158,7 +158,7 @@ export function DataTable({ data }: { data: Task[] }) {
                        <HashIcon className="size-4" /> {tTasks("tags")}
                     </div>
                     <div className="flex gap-1 flex-wrap">
-                      {row.original.tags.map((tag, idx) => (
+                      {(row.original.tags || []).map((tag, idx) => (
                          <Badge key={idx} variant="secondary" className="font-normal">{tag}</Badge>
                       ))}
                     </div>
@@ -194,14 +194,17 @@ export function DataTable({ data }: { data: Task[] }) {
     {
       accessorKey: "assignee",
       header: tTasks("assignee"),
-      cell: ({ row }) => (
-        <div className="flex items-center gap-2">
-           <div className="size-6 bg-muted rounded-full flex items-center justify-center text-xs border">
-              {(row.getValue("assignee") as string).charAt(0)}
-           </div>
-           <span className="text-sm">{row.getValue("assignee")}</span>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const val = row.getValue("assignee") as string;
+        return (
+          <div className="flex items-center gap-2">
+             <div className="size-6 bg-muted rounded-full flex items-center justify-center text-xs border uppercase">
+                {val ? val.substring(0, 1) : "?"}
+             </div>
+             <span className="text-sm">{val || "Unassigned"}</span>
+          </div>
+        )
+      },
     },
     {
       accessorKey: "dueDate",
@@ -215,7 +218,7 @@ export function DataTable({ data }: { data: Task[] }) {
         const tags = row.getValue("tags") as string[];
         return (
           <div className="flex gap-1 flex-wrap max-w-[150px]">
-             {tags.map((tag, i) => (
+             {(tags || []).map((tag, i) => (
                <Badge key={i} variant="outline" className="font-normal text-xs py-0 h-5 bg-background shadow-none">
                  {tag}
                </Badge>
