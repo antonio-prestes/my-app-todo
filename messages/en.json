@@ -18,7 +18,18 @@
     "name": "Full Name",
     "signUpButton": "Create Account",
     "haveAccount": "Already have an account?",
-    "loginLink": "Login"
+    "loginLink": "Login",
+    "unverifiedCodeSent": "A new verification code was sent to your email.",
+    "verifyTitle": "Verify your email",
+    "verifyDescription": "Enter the 4-digit code we sent to your inbox.",
+    "verifyCodeLabel": "Verification code",
+    "verifyCodeHint": "The code expires in 15 minutes.",
+    "verifySubmit": "Confirm",
+    "verifyResend": "Resend code",
+    "verifyResent": "A new code was sent.",
+    "verifySuccess": "Email verified. Redirecting...",
+    "verifyMissingUser": "Invalid or missing link. Sign up again or open the link from your registration.",
+    "verifyResendWait": "Wait {seconds}s to resend"
   },
   "Tasks": {
     "title": "Tasks",

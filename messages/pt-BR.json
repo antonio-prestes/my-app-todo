@@ -18,7 +18,18 @@
     "name": "Nome Completo",
     "signUpButton": "Criar Conta",
     "haveAccount": "Já possui uma conta?",
-    "loginLink": "Entrar"
+    "loginLink": "Entrar",
+    "unverifiedCodeSent": "Enviamos um novo código de verificação para o seu e-mail.",
+    "verifyTitle": "Confirme seu e-mail",
+    "verifyDescription": "Digite o código de 4 dígitos que enviamos para sua caixa de entrada.",
+    "verifyCodeLabel": "Código de verificação",
+    "verifyCodeHint": "O código expira em 15 minutos.",
+    "verifySubmit": "Confirmar",
+    "verifyResend": "Reenviar código",
+    "verifyResent": "Um novo código foi enviado.",
+    "verifySuccess": "E-mail confirmado. Redirecionando...",
+    "verifyMissingUser": "Link inválido ou incompleto. Cadastre-se novamente ou abra o link do cadastro.",
+    "verifyResendWait": "Aguarde {seconds}s para reenviar"
   },
   "Tasks": {
     "title": "Tarefas",

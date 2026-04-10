@@ -2,43 +2,80 @@
 
 Este é um projeto desenvolvido inteiramente para **testar e aprimorar conhecimentos** de desenvolvimento web moderno com foco na interface do usuário (UI) e experiência do usuário (UX), replicando nativamente os conceitos dinâmicos de arquitetura presentes no Notion.
 
-## 🚀 Tecnologias Utilizadas
+## Tecnologias utilizadas
 
-A aplicação foi construída sob conceitos super modernos, abrangendo:
+- **[React](https://react.dev/)**
+- **[Next.js (App Router)](https://nextjs.org/)**
+- **[Shadcn UI](https://ui.shadcn.com/)**
+- **[Tailwind CSS](https://tailwindcss.com/)**
+- **[next-intl](https://next-intl-docs.vercel.app/)**
+- **[@dnd-kit](https://dndkit.com/)**
+- **[Drizzle ORM](https://orm.drizzle.team/)** + **PostgreSQL** (ex.: Neon)
+- **[NextAuth](https://next-auth.js.org/)** (credenciais)
+- **[Resend](https://resend.com/)** (e-mail de verificação de cadastro)
 
-- **[React](https://react.dev/)**: Base interativa da construção das telas.
-- **[Next.js 15 (App Router)](https://nextjs.org/)**: Framework principal para rotas e middleware.
-- **[Shadcn UI](https://ui.shadcn.com/)**: Biblioteca de componentes customizáveis minimalistas.
-- **[Tailwind CSS](https://tailwindcss.com/)**: Estilização flexível e rápida.
-- **[next-intl](https://next-intl-docs.vercel.app/)**: Internacionalização sob demanda nativa na plataforma.
-- **[@dnd-kit](https://dndkit.com/)**: Sistema para arrastar e soltar (Drag and Drop) nativo no Dashboard Kanban.
+## Como executar o projeto (primeira vez após clonar)
 
-## 🛠 Como executar o projeto
+Requisitos: **Node.js** e um **PostgreSQL** acessível.
 
-Para rodar o projeto localmente por enquanto, você apenas precisará do Node.js instalado na sua máquina:
-
-1. Clone o repositório e acesse a pasta raiz (`my-app-todo`).
-2. Instale as dependências executando:
+1. Clone o repositório e entre na pasta raiz.
+2. Instale as dependências:
 
 ```bash
 npm install
 ```
 
-3. **Configuração de Banco de Dados (Neon Postgres):**
-   A aplicação utiliza Drizzle ORM atrelado a um Serverless PostgreSQL Auth. 
-   - Renomeie ou faça uma cópia do arquivo `.env.example` e chame-o de `.env.local` na raiz do projeto.
-   - Abra o `.env.local` e defina suas chaves:
-     - `DATABASE_URL`: A sua URL de conexão fornecida no painel do Neon Postgres.
-     - `AUTH_SECRET`: Uma string aleatória forte (gerada para a Criptografia das sessões).
-   - Feito isso, mande a estrutura das tabelas para o banco usando o comando Drizzle: 
-     ```bash
-     npx drizzle-kit push
-     ```
+3. **Variáveis de ambiente**
 
-4. Inicie o servidor de desenvolvimento na sua máquina:
+```bash
+cp .env.example .env.local
+```
+
+Edite o `.env.local`:
+
+| Variável | Descrição |
+|----------|-----------|
+| `DATABASE_URL` | URL do Postgres (ex.: Neon; use `?sslmode=require` se necessário). |
+| `AUTH_SECRET` | String aleatória forte (ex.: `openssl rand -base64 32`). |
+| `RESEND_API_KEY` | Chave da API Resend para enviar o código de verificação. |
+| `EMAIL_FROM` | Remetente verificado no Resend (ex.: `App <onboarding@seudominio.com>`). |
+
+O `drizzle.config.ts` carrega `.env.local` para os comandos do Drizzle.
+
+4. **Sincronizar o banco com o schema**
+
+- **Desenvolvimento (rápido):** aplica o schema atual ao banco sem gerar novos arquivos SQL:
+
+```bash
+npm run db:push
+```
+
+- **Migrations versionadas:** após alterar `src/db/schema.ts`:
+
+```bash
+npm run db:generate
+npm run db:migrate
+```
+
+Se o banco já tinha tabelas antigas sem novas colunas, o **`db:push`** costuma alinhar colunas e tabelas ao `schema.ts`.
+
+5. Inicie o app:
 
 ```bash
 npm run dev
 ```
 
-5. Acesse [http://localhost:3000](http://localhost:3000) pelo seu navegador de preferência.
+6. Abra [http://localhost:3000](http://localhost:3000).
+
+### Comandos úteis do Drizzle
+
+| Comando | Descrição |
+|--------|-----------|
+| `npm run db:generate` | Gera migrations a partir de `src/db/schema.ts`. |
+| `npm run db:migrate` | Aplica migrations em `src/db/migrations`. |
+| `npm run db:push` | Sincroniza o schema com o banco (sem novo arquivo SQL). |
+| `npm run db:studio` | Abre o Drizzle Studio. |
+
+## Fluxo de cadastro
+
+Após criar a conta, o usuário recebe um código de **4 dígitos** por e-mail e deve confirmar em `/verify-email`. O login só é permitido com a conta verificada (`email_verified` no banco).

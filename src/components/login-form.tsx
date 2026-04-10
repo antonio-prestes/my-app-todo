@@ -17,6 +17,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { signIn } from "next-auth/react"
+import { toast } from "sonner"
+import { getVerifyRedirectForUnverifiedUser } from "@/app/actions/verify-email"
 
 export function LoginForm({
   className,
@@ -43,7 +45,25 @@ export function LoginForm({
     })
 
     if (res?.error) {
-      setError("Credenciais incorretas / Incorrect credentials")
+      if (res.code === "unverified") {
+        const redirect = await getVerifyRedirectForUnverifiedUser(
+          email,
+          password,
+        )
+        if ("userId" in redirect) {
+          toast.success(t("unverifiedCodeSent"))
+          router.push(
+            `/verify-email?userId=${encodeURIComponent(redirect.userId)}`,
+          )
+          setError("")
+        } else {
+          setError(
+            "Confirme seu e-mail antes de entrar. / Please verify your email before signing in.",
+          )
+        }
+      } else {
+        setError("Credenciais incorretas / Incorrect credentials")
+      }
       setLoading(false)
     } else {
       router.push("/dashboard")

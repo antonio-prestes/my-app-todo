@@ -7,6 +7,7 @@ import {NextIntlClientProvider} from 'next-intl';
 import {getMessages} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 import {routing} from '@/i18n/routing';
+import { Toaster } from "sonner";
 
 const notoSans = Noto_Sans({subsets:['latin'],variable:'--font-sans'});
 
@@ -30,9 +31,9 @@ export default async function RootLayout({
   params
 }: Readonly<{
   children: React.ReactNode;
-  params: {locale: string};
+  params: Promise<{ locale: string }>;
 }>) {
-  const {locale} = await params;
+  const { locale } = await params;
 
   if (!routing.locales.includes(locale as any)) {
     notFound();
@@ -50,6 +51,7 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider messages={messages}>
           <TooltipProvider>{children}</TooltipProvider>
+          <Toaster richColors position="top-center" />
         </NextIntlClientProvider>
       </body>
     </html>

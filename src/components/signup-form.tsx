@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { LanguageSwitcher } from "@/components/language-switcher"
-import { signUpUser } from "@/app/actions/auth"
+import { signUpAndSendCode } from "@/app/actions/verify-email"
 
 export function SignupForm({
   className,
@@ -32,14 +32,13 @@ export function SignupForm({
     setLoading(true)
 
     const formData = new FormData(e.currentTarget)
-    const res = await signUpUser(formData)
+    const res = await signUpAndSendCode(formData)
 
     if (res.error) {
       setError(res.error)
       setLoading(false)
-    } else {
-      // Automatically redirect to login on success
-      router.push("/") 
+    } else if (res.userId) {
+      router.push(`/verify-email?userId=${encodeURIComponent(res.userId)}`)
     }
   }
 
