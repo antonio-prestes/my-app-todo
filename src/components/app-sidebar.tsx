@@ -64,7 +64,7 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
         <NavMain items={navMain} />
       </SidebarContent>
       <SidebarFooter>
-         <NavUser user={user ? { name: user.name || "User", email: user.email || "", avatar: user.image || "https://github.com/shadcn.png" } : defaultUserMock} />
+         <NavUser user={user ? { name: user.name || "User", email: user.email || "", avatar: user.avatar || "https://github.com/shadcn.png" } : defaultUserMock} />
       </SidebarFooter>
     </Sidebar>
   )

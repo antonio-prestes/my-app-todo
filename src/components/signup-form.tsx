@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { LanguageSwitcher } from "@/components/language-switcher"
-import { signUpAndSendCode } from "@/app/actions/verify-email"
+import { createClient } from "@/lib/supabase/client"
+import { toast } from "sonner"
 
 export function SignupForm({
   className,
@@ -25,6 +26,7 @@ export function SignupForm({
   const router = useRouter()
   const [error, setError] = React.useState("")
   const [loading, setLoading] = React.useState(false)
+  const supabase = createClient()
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -32,13 +34,26 @@ export function SignupForm({
     setLoading(true)
 
     const formData = new FormData(e.currentTarget)
-    const res = await signUpAndSendCode(formData)
+    const name = formData.get("name") as string
+    const email = formData.get("email") as string
+    const password = formData.get("password") as string
 
-    if (res.error) {
-      setError(res.error)
+    const { error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          display_name: name,
+        },
+      },
+    })
+
+    if (signUpError) {
+      setError(signUpError.message)
       setLoading(false)
-    } else if (res.userId) {
-      router.push(`/verify-email?userId=${encodeURIComponent(res.userId)}`)
+    } else {
+      toast.success(t("confirmEmailMessage") || "Check your email for the confirmation link!")
+      router.push("/") // Redirect to login or a "Check email" page
     }
   }
 

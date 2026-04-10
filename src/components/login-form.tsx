@@ -16,9 +16,8 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { LanguageSwitcher } from "@/components/language-switcher"
-import { signIn } from "next-auth/react"
+import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
-import { getVerifyRedirectForUnverifiedUser } from "@/app/actions/verify-email"
 
 export function LoginForm({
   className,
@@ -28,6 +27,7 @@ export function LoginForm({
   const router = useRouter()
   const [error, setError] = React.useState("")
   const [loading, setLoading] = React.useState(false)
+  const supabase = createClient()
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -38,32 +38,13 @@ export function LoginForm({
     const email = formData.get("email") as string
     const password = formData.get("password") as string
 
-    const res = await signIn("credentials", {
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
-      redirect: false
     })
 
-    if (res?.error) {
-      if (res.code === "unverified") {
-        const redirect = await getVerifyRedirectForUnverifiedUser(
-          email,
-          password,
-        )
-        if ("userId" in redirect) {
-          toast.success(t("unverifiedCodeSent"))
-          router.push(
-            `/verify-email?userId=${encodeURIComponent(redirect.userId)}`,
-          )
-          setError("")
-        } else {
-          setError(
-            "Confirme seu e-mail antes de entrar. / Please verify your email before signing in.",
-          )
-        }
-      } else {
-        setError("Credenciais incorretas / Incorrect credentials")
-      }
+    if (signInError) {
+      setError(signInError.message)
       setLoading(false)
     } else {
       router.push("/dashboard")

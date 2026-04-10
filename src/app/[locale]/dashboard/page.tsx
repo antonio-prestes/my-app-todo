@@ -4,8 +4,8 @@ import { KanbanBoard } from "@/components/kanban-board";
 import { SectionCards } from "@/components/section-cards";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import { getTasks } from "@/app/actions/tasks";
 
 export default async function Page({
@@ -13,10 +13,19 @@ export default async function Page({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const session = await auth();
-  if (!session) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
     redirect("/"); // Block unauthenticated access
   }
+
+  const sessionUser = {
+    id: user.id,
+    name: user.user_metadata.display_name || user.email?.split('@')[0] || "User",
+    email: user.email || "",
+    avatar: user.user_metadata.avatar_url || "https://github.com/shadcn.png"
+  };
 
   const resolvedParams = await searchParams;
   const isKanban = resolvedParams.view === "kanban";
@@ -33,7 +42,7 @@ export default async function Page({
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" user={session.user} />
+      <AppSidebar variant="inset" user={sessionUser} />
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col">
