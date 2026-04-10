@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { createTask } from "@/app/actions/tasks"
+import { createTask, updateTask } from "@/app/actions/tasks"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -28,13 +28,28 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTranslations } from "next-intl"
 import { format, parseISO } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { updateTask } from "@/app/actions/tasks"
 
-export function TaskDialog({ children, task, workspaceId }: { children: React.ReactNode, task?: any, workspaceId?: string }) {
+interface CurrentUser {
+  name: string;
+  avatar: string;
+}
+
+export function TaskDialog({
+  children,
+  task,
+  workspaceId,
+  currentUser,
+}: {
+  children: React.ReactNode;
+  task?: any;
+  workspaceId?: string;
+  currentUser?: CurrentUser;
+}) {
   const tFields = useTranslations("TaskFields")
   const router = useRouter()
   const [open, setOpen] = React.useState(false)
@@ -80,9 +95,9 @@ export function TaskDialog({ children, task, workspaceId }: { children: React.Re
 
     const formData = new FormData(e.currentTarget)
     const title = formData.get("title") as string
+    const description = formData.get("description") as string
     const status = formData.get("status") as string
     const priority = formData.get("priority") as string
-    const assignee = formData.get("assignee") as string
 
     if (!title) {
       setLoading(false)
@@ -92,10 +107,12 @@ export function TaskDialog({ children, task, workspaceId }: { children: React.Re
     try {
       const payload = {
         title,
+        description: description || undefined,
         status: status || "Todo",
         priority: priority || "Medium",
         tags,
-        assignee: assignee || "Eu",
+        assignee: currentUser?.name || "Eu",
+        assigneeAvatar: currentUser?.avatar || undefined,
         dueDate: date ? format(date, "yyyy-MM-dd") : undefined
       };
 
@@ -106,7 +123,6 @@ export function TaskDialog({ children, task, workspaceId }: { children: React.Re
          await createTask({ ...payload, workspaceId });
       }
       
-      // Suave closing emulation
       setTimeout(() => {
         setOpen(false)
         if (!isEdit) {
@@ -132,7 +148,7 @@ export function TaskDialog({ children, task, workspaceId }: { children: React.Re
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Editar Tarefa" : "Nova Tarefa"}</DialogTitle>
           <DialogDescription>
@@ -144,9 +160,21 @@ export function TaskDialog({ children, task, workspaceId }: { children: React.Re
             <FieldLabel htmlFor="title">Título da Tarefa</FieldLabel>
             <Input id="title" name="title" defaultValue={task?.title || ""} placeholder="Descreva sua tarefa aqui..." required disabled={loading} />
           </Field>
+          <Field>
+            <FieldLabel htmlFor="description">Descrição (opcional)</FieldLabel>
+            <textarea
+              id="description"
+              name="description"
+              defaultValue={task?.description || ""}
+              placeholder="Adicione mais detalhes sobre a tarefa..."
+              disabled={loading}
+              rows={3}
+              className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
+            />
+          </Field>
           <div className="grid grid-cols-2 gap-4">
              <Field>
-                <FieldLabel htmlFor="status">Status Definição</FieldLabel>
+                <FieldLabel htmlFor="status">Status</FieldLabel>
                 <Select name="status" defaultValue={task?.status || "Todo"} disabled={loading}>
                   <SelectTrigger id="status">
                     <SelectValue placeholder="Selecione..." />
@@ -175,8 +203,16 @@ export function TaskDialog({ children, task, workspaceId }: { children: React.Re
           </div>
           <div className="grid grid-cols-2 gap-4">
              <Field>
-                <FieldLabel htmlFor="assignee">Responsável</FieldLabel>
-                <Input id="assignee" name="assignee" defaultValue={task?.assignee || "Eu"} placeholder="Digite o nome..." disabled={loading} />
+                <FieldLabel>Responsável</FieldLabel>
+                <div className="flex items-center gap-2 h-9 px-3 rounded-md border bg-muted/50">
+                  <Avatar className="size-5">
+                    <AvatarImage src={currentUser?.avatar} />
+                    <AvatarFallback className="text-[10px]">
+                      {currentUser?.name?.substring(0, 2)?.toUpperCase() || "EU"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm truncate">{currentUser?.name || "Eu"}</span>
+                </div>
              </Field>
              <Field>
                 <FieldLabel htmlFor="dueDate">Prazo de Entrega</FieldLabel>

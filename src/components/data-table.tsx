@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -36,15 +37,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "@/components/ui/drawer"
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -55,17 +47,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Columns3Icon, ChevronDownIcon, ClockIcon, FlagIcon, MoreHorizontalIcon, CircleIcon, UserIcon, HashIcon } from "lucide-react"
+import { Columns3Icon, ChevronDownIcon, CircleIcon, MoreHorizontalIcon } from "lucide-react"
 import { TaskDialog } from "@/components/task-dialog"
+import { TaskDetailModal, PriorityChip } from "@/components/task-detail-modal"
 import { deleteTask } from "@/app/actions/tasks"
 import { useRouter } from "next/navigation"
 
 export const schema = z.object({
   id: z.string(),
   title: z.string(),
+  description: z.string().optional().nullable(),
   status: z.enum(["Todo", "InProgress", "Review", "Done"]),
   priority: z.enum(["Low", "Medium", "High"]),
   assignee: z.string(),
+  assigneeAvatar: z.string().optional().nullable(),
   dueDate: z.string(),
   tags: z.array(z.string()),
 })
@@ -90,6 +85,8 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
+  const [selectedTask, setSelectedTask] = React.useState<Task | null>(null)
+  const [detailOpen, setDetailOpen] = React.useState(false)
 
   const ActionCell = ({ task }: { task: Task }) => {
     const [isDeleting, setIsDeleting] = React.useState(false);
@@ -115,13 +112,11 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          {/* Edit Dialog Trigger integrated locally */}
           <TaskDialog task={task}>
             <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer">
               Editar Tarefa
             </DropdownMenuItem>
           </TaskDialog>
-          {/* Delete Dialog embedded accurately */}
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-500 focus:bg-red-50 focus:text-red-500 cursor-pointer">
@@ -174,74 +169,37 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
       accessorKey: "title",
       header: tTasks("title"),
       cell: ({ row }) => (
-        <Drawer direction="right">
-          <DrawerTrigger asChild>
-            <Button variant="link" className="px-0 font-medium text-foreground hover:no-underline hover:text-primary">
-              <span className="truncate max-w-[250px]">{row.getValue("title")}</span>
-            </Button>
-          </DrawerTrigger>
-          <DrawerContent className="w-full sm:max-w-md h-full rounded-none right-0 left-auto mt-0">
-            <div className="mx-auto w-full max-w-sm flex flex-col h-full h-[100vh]">
-              <DrawerHeader className="p-6">
-                <DrawerTitle className="text-2xl font-bold">{row.getValue("title")}</DrawerTitle>
-                <DrawerDescription>{row.original.id}</DrawerDescription>
-              </DrawerHeader>
-              <div className="p-4 pb-0 flex-1 overflow-y-auto">
-                <div className="flex flex-col gap-6">
-                  {/* Status Item */}
-                  <div className="flex items-center gap-4">
-                    <div className="w-24 text-sm text-muted-foreground flex items-center gap-2">
-                       <CircleIcon className="size-4" /> {tTasks("status")}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm font-medium">
-                      {getStatusIcon(row.original.status)}
-                      {tFields(row.original.status)}
-                    </div>
-                  </div>
-                  {/* Assignee Item */}
-                  <div className="flex items-center gap-4">
-                    <div className="w-24 text-sm text-muted-foreground flex items-center gap-2">
-                       <UserIcon className="size-4" /> {tTasks("assignee")}
-                    </div>
-                    <div className="text-sm font-medium">
-                      {row.original.assignee}
-                    </div>
-                  </div>
-                  {/* Due Date Item */}
-                  <div className="flex items-center gap-4">
-                    <div className="w-24 text-sm text-muted-foreground flex items-center gap-2">
-                       <ClockIcon className="size-4" /> {tTasks("dueDate")}
-                    </div>
-                    <div className="text-sm font-medium">
-                      {row.original.dueDate}
-                    </div>
-                  </div>
-                  {/* Priority Item */}
-                  <div className="flex items-center gap-4">
-                    <div className="w-24 text-sm text-muted-foreground flex items-center gap-2">
-                       <FlagIcon className="size-4" /> {tTasks("priority")}
-                    </div>
-                    <div className="text-sm font-medium">
-                      {tFields(row.original.priority)}
-                    </div>
-                  </div>
-                  {/* Tags Item */}
-                  <div className="flex items-center gap-4">
-                    <div className="w-24 text-sm text-muted-foreground flex items-center gap-2">
-                       <HashIcon className="size-4" /> {tTasks("tags")}
-                    </div>
-                    <div className="flex gap-1 flex-wrap">
-                      {(row.original.tags || []).map((tag, idx) => (
-                         <Badge key={idx} variant="secondary" className="font-normal">{tag}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </DrawerContent>
-        </Drawer>
+        <Button
+          variant="link"
+          className="px-0 font-medium text-foreground hover:no-underline hover:text-primary"
+          onClick={() => {
+            setSelectedTask(row.original)
+            setDetailOpen(true)
+          }}
+        >
+          <span className="truncate max-w-[250px]">{row.getValue("title")}</span>
+        </Button>
       ),
+    },
+    {
+      accessorKey: "description",
+      header: "Descrição",
+      cell: ({ row }) => {
+        const desc = row.getValue("description") as string | null
+        if (!desc) return <span className="text-sm text-muted-foreground">—</span>
+        return (
+          <span
+            className="text-sm text-muted-foreground truncate block max-w-[200px] cursor-pointer hover:text-foreground transition-colors"
+            title={desc}
+            onClick={() => {
+              setSelectedTask(row.original)
+              setDetailOpen(true)
+            }}
+          >
+            {desc}
+          </span>
+        )
+      },
     },
     {
       accessorKey: "status",
@@ -261,7 +219,7 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
       header: tTasks("priority"),
       cell: ({ row }) => {
          const p = row.getValue("priority") as string;
-         return <span className="text-sm">{tFields(p)}</span>;
+         return <PriorityChip priority={p} />;
       }
     },
     {
@@ -269,12 +227,16 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
       header: tTasks("assignee"),
       cell: ({ row }) => {
         const val = row.getValue("assignee") as string;
+        const avatar = row.original.assigneeAvatar;
         return (
           <div className="flex items-center gap-2">
-             <div className="size-6 bg-muted rounded-full flex items-center justify-center text-xs border uppercase">
-                {val ? val.substring(0, 1) : "?"}
-             </div>
-             <span className="text-sm">{val || "Unassigned"}</span>
+             <Avatar className="size-6">
+               <AvatarImage src={avatar || undefined} alt={val} />
+               <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">
+                 {val ? val.substring(0, 2).toUpperCase() : "?"}
+               </AvatarFallback>
+             </Avatar>
+             <span className="text-sm">{val || "Não atribuído"}</span>
           </div>
         )
       },
@@ -282,7 +244,7 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
     {
       accessorKey: "dueDate",
       header: tTasks("dueDate"),
-      cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.getValue("dueDate")}</span>,
+      cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.getValue("dueDate") || "—"}</span>,
     },
     {
       accessorKey: "tags",
@@ -326,109 +288,118 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
   })
 
   return (
-    <div className="w-full flex-col justify-start gap-4 flex px-4 lg:px-6">
-      <div className="flex items-center justify-between">
-        <Input
-          placeholder={tTasks("searchPlaceholder")}
-          value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("title")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm bg-background"
-        />
-        <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Columns3Icon className="mr-2 h-4 w-4" />
-                Columns
-                <ChevronDownIcon className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-32">
-              {table
-                .getAllColumns()
-                .filter((column) => column.getCanHide() && column.id !== "actions")
-                .map((column) => {
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      className="capitalize"
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                    >
-                      {column.id === 'title' ? tTasks("title") :
-                       column.id === 'status' ? tTasks("status") :
-                       column.id === 'priority' ? tTasks("priority") :
-                       column.id === 'assignee' ? tTasks("assignee") :
-                       column.id === 'dueDate' ? tTasks("dueDate") :
-                       column.id === 'tags' ? tTasks("tags") : column.id}
-                    </DropdownMenuCheckboxItem>
-                  )
-                })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+    <>
+      <div className="w-full flex-col justify-start gap-4 flex px-4 lg:px-6">
+        <div className="flex items-center justify-between">
+          <Input
+            placeholder={tTasks("searchPlaceholder")}
+            value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
+            onChange={(event) =>
+              table.getColumn("title")?.setFilterValue(event.target.value)
+            }
+            className="max-w-sm bg-background"
+          />
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Columns3Icon className="mr-2 h-4 w-4" />
+                  Columns
+                  <ChevronDownIcon className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-32">
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide() && column.id !== "actions")
+                  .map((column) => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        className="capitalize"
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
+                      >
+                        {column.id === 'title' ? tTasks("title") :
+                         column.id === 'status' ? tTasks("status") :
+                         column.id === 'priority' ? tTasks("priority") :
+                         column.id === 'assignee' ? tTasks("assignee") :
+                         column.id === 'dueDate' ? tTasks("dueDate") :
+                         column.id === 'tags' ? tTasks("tags") :
+                         column.id === 'description' ? "Descrição" : column.id}
+                      </DropdownMenuCheckboxItem>
+                    )
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-      </div>
-      <div className="rounded-md border bg-card">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  )
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="hover:bg-muted/50"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-2">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
+        <div className="rounded-md border bg-card">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    )
+                  })}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="flex items-center justify-end space-x-2">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="hover:bg-muted/50"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="py-2">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="flex items-center justify-end space-x-2">
+          <div className="flex-1 text-sm text-muted-foreground">
+            {table.getFilteredSelectedRowModel().rows.length} of{" "}
+            {table.getFilteredRowModel().rows.length} row(s) selected.
+          </div>
         </div>
       </div>
-    </div>
+
+      <TaskDetailModal
+        task={selectedTask}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+      />
+    </>
   )
 }

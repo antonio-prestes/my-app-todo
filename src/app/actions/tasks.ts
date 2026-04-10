@@ -4,6 +4,7 @@ import { db } from "@/db/db";
 import { tasks } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 // Helper to get authenticated user ID
 async function getAuthUserId() {
@@ -27,10 +28,12 @@ export async function getTasks(workspaceId: string) {
 export async function createTask(data: {
   title: string;
   workspaceId: string;
+  description?: string;
   status?: string;
   priority?: string;
   tags?: string[];
   assignee?: string;
+  assigneeAvatar?: string;
   dueDate?: string;
 }) {
   const userId = await getAuthUserId();
@@ -38,15 +41,18 @@ export async function createTask(data: {
 
   const result = await db.insert(tasks).values({
     title: data.title,
+    description: data.description || null,
     status: data.status || "Todo",
     priority: data.priority || "Medium",
     tags: data.tags,
     assignee: data.assignee,
+    assigneeAvatar: data.assigneeAvatar || null,
     dueDate: data.dueDate,
     userId,
     workspaceId: data.workspaceId,
   }).returning();
 
+  revalidatePath("/dashboard", "layout");
   return result[0];
 }
 
@@ -71,6 +77,7 @@ export async function updateTask(id: string, data: Partial<typeof tasks.$inferIn
     .set(data)
     .where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
   
+  revalidatePath("/dashboard", "layout");
   return { success: true };
 }
 
@@ -80,5 +87,6 @@ export async function deleteTask(id: string) {
   if (!userId) throw new Error("Unauthorized");
 
   await db.delete(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+  revalidatePath("/dashboard", "layout");
   return { success: true };
 }

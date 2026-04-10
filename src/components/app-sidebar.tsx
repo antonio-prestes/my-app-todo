@@ -54,7 +54,7 @@ export function AppSidebar({ user, workspaces = [], ...props }: React.ComponentP
         <NavMain workspaces={workspaces} currentPath={pathname} />
       </SidebarContent>
       <SidebarFooter>
-         <NavUser user={user ? { name: user.name || "User", email: user.email || "", avatar: user.avatar || "https://github.com/shadcn.png" } : defaultUserMock} />
+         <NavUser user={user ? { id: user.id, name: user.name || "User", email: user.email || "", avatar: user.avatar || "https://github.com/shadcn.png" } : defaultUserMock} />
       </SidebarFooter>
     </Sidebar>
   )

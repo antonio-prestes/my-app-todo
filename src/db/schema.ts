@@ -21,9 +21,11 @@ export const workspaces = pgTable("workspaces", {
 export const tasks = pgTable("tasks", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: text("title").notNull(),
+  description: text("description"),
   status: text("status").notNull().default("Todo"), // Todo, InProgress, Review, Done
   priority: text("priority").notNull().default("Medium"), // Low, Medium, High
-  assignee: text("assignee"), // E.g., user name or initials for now
+  assignee: text("assignee"),
+  assigneeAvatar: text("assignee_avatar"),
   dueDate: text("due_date"),
   tags: jsonb("tags").$type<string[]>(), // Array of tag strings
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),

@@ -70,7 +70,7 @@ export default async function WorkspacePage({
                 <p className="text-sm text-muted-foreground">{workspace.description}</p>
               )}
             </div>
-            <TaskDialog workspaceId={workspaceId}>
+            <TaskDialog workspaceId={workspaceId} currentUser={{ name: sessionUser.name, avatar: sessionUser.avatar }}>
               <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
                 <CirclePlusIcon className="size-4" />
                 Nova Tarefa
