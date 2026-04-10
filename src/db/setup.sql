@@ -1,11 +1,9 @@
 -- 1. Create Storage Bucket for Avatars
--- Note: We use an INSERT instead of a function call to avoid needing extra extensions
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('avatars', 'avatars', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- 2. Storage RLS Policies
--- Allow public access to all files in the avatars bucket
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -53,5 +51,39 @@ BEGIN
     ) THEN
         CREATE POLICY "Users can read own profile" ON public.users
         FOR SELECT USING (auth.uid() = id);
+    END IF;
+END $$;
+
+-- 4. Workspaces Table RLS
+ALTER TABLE public.workspaces ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = 'Users can read own workspaces' AND tablename = 'workspaces' AND schemaname = 'public'
+    ) THEN
+        CREATE POLICY "Users can read own workspaces" ON public.workspaces
+        FOR SELECT USING (auth.uid() = user_id);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = 'Users can create own workspaces' AND tablename = 'workspaces' AND schemaname = 'public'
+    ) THEN
+        CREATE POLICY "Users can create own workspaces" ON public.workspaces
+        FOR INSERT WITH CHECK (auth.uid() = user_id);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = 'Users can update own workspaces' AND tablename = 'workspaces' AND schemaname = 'public'
+    ) THEN
+        CREATE POLICY "Users can update own workspaces" ON public.workspaces
+        FOR UPDATE USING (auth.uid() = user_id);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies WHERE policyname = 'Users can delete own workspaces' AND tablename = 'workspaces' AND schemaname = 'public'
+    ) THEN
+        CREATE POLICY "Users can delete own workspaces" ON public.workspaces
+        FOR DELETE USING (auth.uid() = user_id);
     END IF;
 END $$;

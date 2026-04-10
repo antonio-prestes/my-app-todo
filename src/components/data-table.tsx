@@ -81,7 +81,7 @@ function getStatusIcon(status: string) {
   }
 }
 
-export function DataTable({ data }: { data: Task[] }) {
+export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: string }) {
   const tTasks = useTranslations("Tasks")
   const tFields = useTranslations("TaskFields")
   const router = useRouter()

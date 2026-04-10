@@ -34,11 +34,12 @@ import { CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { updateTask } from "@/app/actions/tasks"
 
-export function TaskDialog({ children, task }: { children: React.ReactNode, task?: any }) {
+export function TaskDialog({ children, task, workspaceId }: { children: React.ReactNode, task?: any, workspaceId?: string }) {
   const tFields = useTranslations("TaskFields")
   const router = useRouter()
   const [open, setOpen] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
+  const [mounted, setMounted] = React.useState(false)
   const [tags, setTags] = React.useState<string[]>(task?.tags || [])
   const [tagInput, setTagInput] = React.useState("")
   const [date, setDate] = React.useState<Date | undefined>(
@@ -46,6 +47,10 @@ export function TaskDialog({ children, task }: { children: React.ReactNode, task
   )
 
   const isEdit = !!task;
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   React.useEffect(() => {
     if (open) {
@@ -97,7 +102,8 @@ export function TaskDialog({ children, task }: { children: React.ReactNode, task
       if (isEdit) {
          await updateTask(task.id, payload);
       } else {
-         await createTask(payload);
+         if (!workspaceId) throw new Error("Workspace ID is required");
+         await createTask({ ...payload, workspaceId });
       }
       
       // Suave closing emulation
@@ -115,6 +121,10 @@ export function TaskDialog({ children, task }: { children: React.ReactNode, task
       console.error(err)
       setLoading(false)
     }
+  }
+
+  if (!mounted) {
+    return <>{children}</>
   }
 
   return (

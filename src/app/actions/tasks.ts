@@ -12,23 +12,39 @@ async function getAuthUserId() {
   return user?.id;
 }
 
-// Fetch
-export async function getTasks() {
+// Fetch tasks for a specific workspace
+export async function getTasks(workspaceId: string) {
   const userId = await getAuthUserId();
   if (!userId) throw new Error("Unauthorized");
 
-  const results = await db.select().from(tasks).where(eq(tasks.userId, userId)).orderBy(tasks.createdAt);
+  const results = await db.select().from(tasks)
+    .where(and(eq(tasks.userId, userId), eq(tasks.workspaceId, workspaceId)))
+    .orderBy(tasks.createdAt);
   return results;
 }
 
 // Create
-export async function createTask(data: { title: string, status?: string, priority?: string, tags?: string[], assignee?: string, dueDate?: string }) {
+export async function createTask(data: {
+  title: string;
+  workspaceId: string;
+  status?: string;
+  priority?: string;
+  tags?: string[];
+  assignee?: string;
+  dueDate?: string;
+}) {
   const userId = await getAuthUserId();
   if (!userId) throw new Error("Unauthorized");
 
   const result = await db.insert(tasks).values({
-    ...data,
-    userId: userId
+    title: data.title,
+    status: data.status || "Todo",
+    priority: data.priority || "Medium",
+    tags: data.tags,
+    assignee: data.assignee,
+    dueDate: data.dueDate,
+    userId,
+    workspaceId: data.workspaceId,
   }).returning();
 
   return result[0];

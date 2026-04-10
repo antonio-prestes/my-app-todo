@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useTranslations } from "next-intl"
-import { useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation"
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -15,7 +15,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { CommandIcon, LayoutListIcon, KanbanSquareIcon } from "lucide-react"
+import { CommandIcon } from "lucide-react"
+import Link from "next/link"
 
 const defaultUserMock = {
   name: "Acme User",
@@ -23,25 +24,14 @@ const defaultUserMock = {
   avatar: "/avatars/shadcn.jpg",
 }
 
-export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sidebar> & { user?: any }) {
-  const tNav = useTranslations("Navigation")
-  const searchParams = useSearchParams()
-  const view = searchParams.get("view")
+interface Workspace {
+  id: string;
+  name: string;
+  description: string | null;
+}
 
-  const navMain = [
-    {
-      title: tNav("tableView"),
-      url: "/dashboard",
-      icon: <LayoutListIcon />,
-      isActive: view !== "kanban",
-    },
-    {
-      title: tNav("kanbanView"),
-      url: "/dashboard?view=kanban",
-      icon: <KanbanSquareIcon />,
-      isActive: view === "kanban",
-    },
-  ]
+export function AppSidebar({ user, workspaces = [], ...props }: React.ComponentProps<typeof Sidebar> & { user?: any; workspaces?: Workspace[] }) {
+  const pathname = usePathname()
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -52,16 +42,16 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
               asChild
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
-              <a href="#">
+              <Link href="/dashboard">
                 <CommandIcon className="size-5!" />
-                <span className="text-base font-semibold">Workspace</span>
-              </a>
+                <span className="text-base font-semibold">Workspaces</span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMain} />
+        <NavMain workspaces={workspaces} currentPath={pathname} />
       </SidebarContent>
       <SidebarFooter>
          <NavUser user={user ? { name: user.name || "User", email: user.email || "", avatar: user.avatar || "https://github.com/shadcn.png" } : defaultUserMock} />
@@ -69,4 +59,3 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
     </Sidebar>
   )
 }
-

@@ -48,5 +48,17 @@
     "Low": "Baixa",
     "Medium": "Média",
     "High": "Alta"
+  },
+  "Workspace": {
+    "title": "Workspaces",
+    "newWorkspace": "Novo Workspace",
+    "name": "Nome",
+    "description": "Descrição",
+    "create": "Criar Workspace",
+    "edit": "Editar Workspace",
+    "delete": "Excluir Workspace",
+    "emptyState": "Nenhum workspace criado ainda. Crie o primeiro!",
+    "tableView": "Tabela",
+    "kanbanView": "Kanban"
   }
 }
