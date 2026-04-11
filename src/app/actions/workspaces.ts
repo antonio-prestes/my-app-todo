@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/db/db";
-import { workspaces } from "@/db/schema";
+import { workspaces, tasks } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
@@ -13,15 +13,34 @@ async function getAuthUserId() {
   return user?.id;
 }
 
-// Fetch all workspaces for the current user
+// Fetch all workspaces for the current user with stats
 export async function getWorkspaces() {
   const userId = await getAuthUserId();
   if (!userId) throw new Error("Unauthorized");
 
-  const results = await db.select().from(workspaces)
-    .where(eq(workspaces.userId, userId))
-    .orderBy(workspaces.createdAt);
-  return results;
+  // Using relational query to get workspaces with tasks
+  const results = await db.query.workspaces.findMany({
+    where: eq(workspaces.userId, userId),
+    with: {
+      tasks: {
+        columns: {
+          assignee: true,
+          assigneeAvatar: true,
+        }
+      }
+    },
+    orderBy: workspaces.createdAt,
+  });
+
+  // Transform data to include unique avatars and task counts
+  return results.map(ws => {
+    const uniqueAvatars = Array.from(new Set(ws.tasks.map(t => t.assigneeAvatar).filter(Boolean)));
+    return {
+      ...ws,
+      taskCount: ws.tasks.length,
+      avatars: uniqueAvatars.slice(0, 4) as string[], // Take top 4
+    };
+  });
 }
 
 // Fetch a single workspace
@@ -35,13 +54,14 @@ export async function getWorkspace(id: string) {
 }
 
 // Create a new workspace
-export async function createWorkspace(data: { name: string; description?: string }) {
+export async function createWorkspace(data: { name: string; description?: string; emoji?: string }) {
   const userId = await getAuthUserId();
   if (!userId) throw new Error("Unauthorized");
 
   const result = await db.insert(workspaces).values({
     name: data.name,
     description: data.description || null,
+    emoji: data.emoji || null,
     userId,
   }).returning();
 
@@ -50,7 +70,7 @@ export async function createWorkspace(data: { name: string; description?: string
 }
 
 // Update a workspace
-export async function updateWorkspace(id: string, data: { name?: string; description?: string }) {
+export async function updateWorkspace(id: string, data: { name?: string; description?: string; emoji?: string }) {
   const userId = await getAuthUserId();
   if (!userId) throw new Error("Unauthorized");
 

@@ -14,8 +14,9 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Field, FieldLabel } from "@/components/ui/field"
-import { Loader2Icon } from "lucide-react"
+import { Loader2Icon, SmileIcon } from "lucide-react"
 import { toast } from "sonner"
+import { EmojiPicker } from "@/components/emoji-picker"
 
 interface WorkspaceDialogProps {
   children: React.ReactNode;
@@ -23,6 +24,7 @@ interface WorkspaceDialogProps {
     id: string;
     name: string;
     description: string | null;
+    emoji?: string | null;
   };
 }
 
@@ -31,6 +33,7 @@ export function WorkspaceDialog({ children, workspace }: WorkspaceDialogProps) {
   const [open, setOpen] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
+  const [selectedEmoji, setSelectedEmoji] = React.useState(workspace?.emoji || "📁")
 
   React.useEffect(() => {
     setMounted(true)
@@ -45,6 +48,7 @@ export function WorkspaceDialog({ children, workspace }: WorkspaceDialogProps) {
     const formData = new FormData(e.currentTarget)
     const name = formData.get("name") as string
     const description = formData.get("description") as string
+    const emoji = formData.get("emoji") as string
 
     if (!name.trim()) {
       setLoading(false)
@@ -53,10 +57,10 @@ export function WorkspaceDialog({ children, workspace }: WorkspaceDialogProps) {
 
     try {
       if (isEdit) {
-        await updateWorkspace(workspace.id, { name, description })
+        await updateWorkspace(workspace.id, { name, description, emoji })
         toast.success("Workspace atualizado!")
       } else {
-        const result = await createWorkspace({ name, description })
+        const result = await createWorkspace({ name, description, emoji })
         toast.success("Workspace criado!")
         // Navigate to the new workspace
         if (result?.id) {
@@ -92,7 +96,25 @@ export function WorkspaceDialog({ children, workspace }: WorkspaceDialogProps) {
               : "Crie um novo espaço de trabalho para organizar suas tarefas."}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} className="grid gap-4 py-4">
+        <form onSubmit={onSubmit} className="grid gap-6 py-4">
+          <div className="flex flex-col items-center justify-center gap-4 py-2">
+            <EmojiPicker
+              value={selectedEmoji}
+              onChange={(emoji) => setSelectedEmoji(emoji)}
+            >
+              <button type="button" className="relative group focus:outline-none">
+                <div className="size-24 rounded-3xl bg-primary/10 flex items-center justify-center text-5xl shadow-inner border-2 border-primary/20 group-hover:bg-primary/20 transition-all hover:scale-105 active:scale-95 cursor-pointer">
+                  {selectedEmoji}
+                  <div className="absolute -bottom-2 -right-2 bg-primary text-primary-foreground size-8 rounded-full flex items-center justify-center border-4 border-background shadow-lg group-hover:bg-primary/90">
+                    <SmileIcon className="size-4" />
+                  </div>
+                </div>
+                <input type="hidden" name="emoji" value={selectedEmoji} />
+              </button>
+            </EmojiPicker>
+            <p className="text-xs text-muted-foreground font-medium">Clique no ícone para alterar</p>
+          </div>
+
           <Field>
             <FieldLabel htmlFor="ws-name">Nome</FieldLabel>
             <Input

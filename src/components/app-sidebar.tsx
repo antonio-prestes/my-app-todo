@@ -19,6 +19,7 @@ import { CommandIcon } from "lucide-react"
 import Link from "next/link"
 
 const defaultUserMock = {
+  id: "default-user",
   name: "Acme User",
   email: "admin@example.com",
   avatar: "/avatars/shadcn.jpg",
