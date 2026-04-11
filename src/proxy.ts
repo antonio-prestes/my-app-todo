@@ -3,7 +3,7 @@ import {routing} from './i18n/routing';
 import { updateSession } from '@/lib/supabase/middleware';
 import { type NextRequest } from 'next/server';
 
-export default async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   // Update Supabase session
   await updateSession(request);
   
