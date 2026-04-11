@@ -90,6 +90,8 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
 
   const ActionCell = ({ task }: { task: Task }) => {
     const [isDeleting, setIsDeleting] = React.useState(false);
+    const tCommon = useTranslations("Common");
+    const tTasks = useTranslations("Tasks");
 
     const handleDelete = async () => {
       setIsDeleting(true);
@@ -107,33 +109,33 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Open menu</span>
+            <span className="sr-only">{tCommon("openMenu")}</span>
             <MoreHorizontalIcon className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
           <TaskDialog task={task}>
             <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer">
-              Editar Tarefa
+              {tTasks("editTask") || "Edit Task"}
             </DropdownMenuItem>
           </TaskDialog>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-500 focus:bg-red-50 focus:text-red-500 cursor-pointer">
-                Excluir Tarefa
+                {tTasks("deleteTask") || "Delete Task"}
               </DropdownMenuItem>
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Tem absoluta certeza?</AlertDialogTitle>
+                <AlertDialogTitle>{tCommon("areYouSure")}</AlertDialogTitle>
                 <AlertDialogDescription>
                   Esta ação não pode ser desfeita. A tarefa <strong>{task.title}</strong> será deletada dos servidores finais de forma permanente.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Voltar</AlertDialogCancel>
+                <AlertDialogCancel>{tCommon("back")}</AlertDialogCancel>
                 <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-red-500 hover:bg-red-600 text-white">
-                  {isDeleting ? "Deletando..." : "Sim, excluir"}
+                  {isDeleting ? tCommon("delete") + "..." : tCommon("delete")}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -183,7 +185,7 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
     },
     {
       accessorKey: "description",
-      header: "Descrição",
+      header: tTasks("descriptionLabel"),
       cell: ({ row }) => {
         const desc = row.getValue("description") as string | null
         if (!desc) return <span className="text-sm text-muted-foreground">—</span>
@@ -236,7 +238,7 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
                  {val ? val.substring(0, 2).toUpperCase() : "?"}
                </AvatarFallback>
              </Avatar>
-             <span className="text-sm">{val || "Não atribuído"}</span>
+             <span className="text-sm">{val || tTasks("unassigned")}</span>
           </div>
         )
       },
@@ -304,7 +306,7 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Columns3Icon className="mr-2 h-4 w-4" />
-                  Columns
+                  {tTasks("columns") || "Columns"}
                   <ChevronDownIcon className="ml-2 h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -322,13 +324,13 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
                           column.toggleVisibility(!!value)
                         }
                       >
-                        {column.id === 'title' ? tTasks("title") :
+                        {column.id === 'title' ? tTasks("titleLabel") :
                          column.id === 'status' ? tTasks("status") :
                          column.id === 'priority' ? tTasks("priority") :
                          column.id === 'assignee' ? tTasks("assignee") :
                          column.id === 'dueDate' ? tTasks("dueDate") :
                          column.id === 'tags' ? tTasks("tags") :
-                         column.id === 'description' ? "Descrição" : column.id}
+                         column.id === 'description' ? tTasks("descriptionLabel") : column.id}
                       </DropdownMenuCheckboxItem>
                     )
                   })}
@@ -380,7 +382,7 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
                     colSpan={columns.length}
                     className="h-24 text-center"
                   >
-                    No results.
+                    {tTasks("noResults") || "No results."}
                   </TableCell>
                 </TableRow>
               )}
@@ -389,8 +391,10 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
         </div>
         <div className="flex items-center justify-end space-x-2">
           <div className="flex-1 text-sm text-muted-foreground">
-            {table.getFilteredSelectedRowModel().rows.length} of{" "}
-            {table.getFilteredRowModel().rows.length} row(s) selected.
+            {tTasks("rowsSelected", { 
+              selected: table.getFilteredSelectedRowModel().rows.length, 
+              total: table.getFilteredRowModel().rows.length 
+            }) || `${table.getFilteredSelectedRowModel().rows.length} of ${table.getFilteredRowModel().rows.length} row(s) selected.`}
           </div>
         </div>
       </div>

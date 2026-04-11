@@ -41,6 +41,7 @@ import {
 import { deleteWorkspace } from "@/app/actions/workspaces";
 import { toast } from "sonner";
 import * as React from "react";
+import { useTranslations } from "next-intl";
 
 interface Workspace {
   id: string;
@@ -58,6 +59,8 @@ export function NavMain({
 }) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = React.useState<string | null>(null);
+  const t = useTranslations("Workspace");
+  const tc = useTranslations("Common");
 
   // Extract active workspace ID from path if present
   const workspaceMatch = currentPath.match(/\/dashboard\/([^\/]+)/);
@@ -67,10 +70,10 @@ export function NavMain({
     setIsDeleting(id);
     try {
       await deleteWorkspace(id);
-      toast.success("Workspace excluído com sucesso");
+      toast.success(t("deleteSuccess") || "Workspace deleted");
       router.push("/dashboard");
     } catch (error) {
-      toast.error("Erro ao excluir workspace");
+      toast.error(t("deleteError") || "Error deleting workspace");
     } finally {
       setIsDeleting(null);
     }
@@ -84,11 +87,11 @@ export function NavMain({
             <SidebarMenuItem>
               <WorkspaceDialog>
                 <SidebarMenuButton
-                  tooltip="Novo Workspace"
+                  tooltip={t("newWorkspace")}
                   className="w-full justify-center bg-primary text-primary-foreground font-semibold py-2.5 rounded-lg transition-all hover:bg-primary/90 hover:text-primary-foreground active:scale-[0.98] shadow-sm"
                 >
                   <CirclePlusIcon className="mr-2 h-4 w-4" />
-                  <span>Novo Workspace</span>
+                  <span>{t("newWorkspace")}</span>
                 </SidebarMenuButton>
               </WorkspaceDialog>
             </SidebarMenuItem>
@@ -97,7 +100,7 @@ export function NavMain({
       </SidebarGroup>
 
       <SidebarGroup>
-        <SidebarGroupLabel className="px-2 mb-1">Seus Workspaces</SidebarGroupLabel>
+        <SidebarGroupLabel className="px-2 mb-1">{t("title")}</SidebarGroupLabel>
         <SidebarGroupContent>
           <SidebarMenu>
             {workspaces.map((ws) => {
@@ -127,7 +130,7 @@ export function NavMain({
                       <WorkspaceDialog workspace={ws}>
                         <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer">
                           <PencilIcon className="mr-2 h-4 w-4" />
-                          Editar
+                          {t("edit")}
                         </DropdownMenuItem>
                       </WorkspaceDialog>
 
@@ -135,24 +138,24 @@ export function NavMain({
                         <AlertDialogTrigger asChild>
                           <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-500 focus:text-red-500 cursor-pointer">
                             <Trash2Icon className="mr-2 h-4 w-4" />
-                            Deletar
+                            {tc("delete")}
                           </DropdownMenuItem>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir Workspace?</AlertDialogTitle>
+                            <AlertDialogTitle>{t("deleteConfirmTitle")}</AlertDialogTitle>
                             <AlertDialogDescription>
                               Esta ação é irreversível. Todas as tarefas vinculadas a <strong>{ws.name}</strong> serão permanentemente excluídas.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogCancel>{tc("cancel")}</AlertDialogCancel>
                             <AlertDialogAction
                               onClick={() => handleDelete(ws.id)}
                               className="bg-red-500 hover:bg-red-600 text-white"
                               disabled={isDeleting === ws.id}
                             >
-                              {isDeleting === ws.id ? "Excluindo..." : "Confirmar Exclusão"}
+                              {isDeleting === ws.id ? tc("delete") + "..." : tc("delete")}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>

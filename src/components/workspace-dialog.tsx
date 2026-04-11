@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Loader2Icon, SmileIcon } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 import { EmojiPicker } from "@/components/emoji-picker"
 
 interface WorkspaceDialogProps {
@@ -30,6 +31,8 @@ interface WorkspaceDialogProps {
 
 export function WorkspaceDialog({ children, workspace }: WorkspaceDialogProps) {
   const router = useRouter()
+  const t = useTranslations("Workspace")
+  const tc = useTranslations("Common")
   const [open, setOpen] = React.useState(false)
   const [loading, setLoading] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
@@ -58,10 +61,10 @@ export function WorkspaceDialog({ children, workspace }: WorkspaceDialogProps) {
     try {
       if (isEdit) {
         await updateWorkspace(workspace.id, { name, description, emoji })
-        toast.success("Workspace atualizado!")
+        toast.success(t("editSuccess") || "Workspace updated!")
       } else {
         const result = await createWorkspace({ name, description, emoji })
-        toast.success("Workspace criado!")
+        toast.success(t("createSuccess") || "Workspace created!")
         // Navigate to the new workspace
         if (result?.id) {
           router.push(`/dashboard/${result.id}`)
@@ -72,7 +75,7 @@ export function WorkspaceDialog({ children, workspace }: WorkspaceDialogProps) {
       router.refresh()
     } catch (err) {
       console.error(err)
-      toast.error("Erro ao salvar workspace")
+      toast.error(t("saveError") || "Error saving workspace")
     } finally {
       setLoading(false)
     }
@@ -89,11 +92,11 @@ export function WorkspaceDialog({ children, workspace }: WorkspaceDialogProps) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Editar Workspace" : "Novo Workspace"}</DialogTitle>
+          <DialogTitle>{isEdit ? t("edit") : t("newWorkspace")}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Atualize as informações do seu workspace."
-              : "Crie um novo espaço de trabalho para organizar suas tarefas."}
+              ? t("editDescription") || "Update your workspace info."
+              : t("createDescription") || "Create a new workspace to organize your tasks."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="grid gap-6 py-4">
@@ -112,11 +115,11 @@ export function WorkspaceDialog({ children, workspace }: WorkspaceDialogProps) {
                 <input type="hidden" name="emoji" value={selectedEmoji} />
               </button>
             </EmojiPicker>
-            <p className="text-xs text-muted-foreground font-medium">Clique no ícone para alterar</p>
+            <p className="text-xs text-muted-foreground font-medium">{t("clickToChangeIcon")}</p>
           </div>
 
           <Field>
-            <FieldLabel htmlFor="ws-name">Nome</FieldLabel>
+            <FieldLabel htmlFor="ws-name">{t("nameLabel")}</FieldLabel>
             <Input
               id="ws-name"
               name="name"
@@ -128,7 +131,7 @@ export function WorkspaceDialog({ children, workspace }: WorkspaceDialogProps) {
             />
           </Field>
           <Field>
-            <FieldLabel htmlFor="ws-description">Descrição (opcional)</FieldLabel>
+            <FieldLabel htmlFor="ws-description">{t("descriptionLabel")}</FieldLabel>
             <Input
               id="ws-description"
               name="description"
@@ -141,7 +144,7 @@ export function WorkspaceDialog({ children, workspace }: WorkspaceDialogProps) {
           <div className="flex justify-end mt-2">
             <Button type="submit" disabled={loading} className="min-w-[140px]">
               {loading && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
-              {isEdit ? "Salvar Alterações" : "Criar Workspace"}
+              {isEdit ? tc("save") : t("create")}
             </Button>
           </div>
         </form>

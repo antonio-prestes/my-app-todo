@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { getWorkspaces } from "@/app/actions/workspaces";
 import { WorkspaceDialog } from "@/components/workspace-dialog";
 import { FolderIcon, PlusIcon, ListTodoIcon, UsersIcon } from "lucide-react";
@@ -7,17 +8,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 export default async function DashboardPage() {
   const workspaces = await getWorkspaces();
 
+  const t = await getTranslations("Dashboard");
+
   return (
     <div className="flex flex-col gap-8 p-4 lg:p-8 max-w-7xl mx-auto w-full">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Seus Workspaces</h1>
-          <p className="text-muted-foreground mt-1">Gerencie seus projetos e tarefas em espaços dedicados.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("description")}</p>
         </div>
         <WorkspaceDialog>
           <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98]">
             <PlusIcon className="size-4" />
-            Criar Workspace
+            {t("createFirst")}
           </button>
         </WorkspaceDialog>
       </header>
@@ -27,11 +30,11 @@ export default async function DashboardPage() {
           <div className="rounded-full bg-muted p-4 mb-4">
             <FolderIcon className="size-8 text-muted-foreground" />
           </div>
-          <h3 className="text-xl font-semibold">Nenhum workspace encontrado</h3>
-          <p className="text-muted-foreground mt-2 max-w-[280px]">Comece criando seu primeiro workspace para organizar suas tarefas.</p>
+          <h3 className="text-xl font-semibold">{t("emptyTitle")}</h3>
+          <p className="text-muted-foreground mt-2 max-w-[280px]">{t("emptyDescription")}</p>
           <WorkspaceDialog>
             <button className="mt-6 font-medium text-primary hover:underline">
-              Criar meu primeiro workspace
+              {t("createFirst")}
             </button>
           </WorkspaceDialog>
         </div>
@@ -63,7 +66,7 @@ export default async function DashboardPage() {
               <div className="mt-6 pt-6 border-t flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-full">
                   <ListTodoIcon className="size-4" />
-                  <span>{ws.taskCount} tarefas</span>
+                  <span>{t("tasksCount", { count: ws.taskCount })}</span>
                 </div>
 
                 {ws.avatars && ws.avatars.length > 0 && (
@@ -79,7 +82,7 @@ export default async function DashboardPage() {
               </div>
 
               <div className="text-xs text-muted-foreground/60 mt-4" suppressHydrationWarning>
-                Criado em {new Date(ws.createdAt).toLocaleDateString()}
+                {t("createdAt", { date: new Date(ws.createdAt).toLocaleDateString() })}
               </div>
             </Link>
           ))}

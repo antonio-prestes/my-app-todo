@@ -50,6 +50,8 @@ export function TaskDialog({
   workspaceId?: string;
   currentUser?: CurrentUser;
 }) {
+  const tTasks = useTranslations("Tasks")
+  const tCommon = useTranslations("Common")
   const tFields = useTranslations("TaskFields")
   const router = useRouter()
   const [open, setOpen] = React.useState(false)
@@ -111,7 +113,7 @@ export function TaskDialog({
         status: status || "Todo",
         priority: priority || "Medium",
         tags,
-        assignee: currentUser?.name || "Eu",
+        assignee: currentUser?.name || "Me",
         assigneeAvatar: currentUser?.avatar || undefined,
         dueDate: date ? format(date, "yyyy-MM-dd") : undefined
       };
@@ -150,23 +152,23 @@ export function TaskDialog({
       </DialogTrigger>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Editar Tarefa" : "Nova Tarefa"}</DialogTitle>
+          <DialogTitle>{isEdit ? tTasks("editTask") || "Edit Task" : tTasks("addTask")}</DialogTitle>
           <DialogDescription>
-            {isEdit ? "Edite as informações da sua demanda do quadro." : "Preencha os dados abaixo para adicionar uma nova demanda ao quadro."}
+            {isEdit ? tTasks("editTaskDescription") || "Edit task details." : tTasks("addTaskDescription") || "Fill in the details to add a new task."}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="grid gap-4 py-4">
           <Field>
-            <FieldLabel htmlFor="title">Título da Tarefa</FieldLabel>
-            <Input id="title" name="title" defaultValue={task?.title || ""} placeholder="Descreva sua tarefa aqui..." required disabled={loading} />
+            <FieldLabel htmlFor="title">{tTasks("titleLabel")}</FieldLabel>
+            <Input id="title" name="title" defaultValue={task?.title || ""} placeholder={tTasks("titlePlaceholder") || "Task title..."} required disabled={loading} />
           </Field>
           <Field>
-            <FieldLabel htmlFor="description">Descrição (opcional)</FieldLabel>
+            <FieldLabel htmlFor="description">{tTasks("descriptionLabel")}</FieldLabel>
             <textarea
               id="description"
               name="description"
               defaultValue={task?.description || ""}
-              placeholder="Adicione mais detalhes sobre a tarefa..."
+              placeholder={tTasks("descriptionPlaceholder") || "Task description..."}
               disabled={loading}
               rows={3}
               className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
@@ -174,10 +176,10 @@ export function TaskDialog({
           </Field>
           <div className="grid grid-cols-2 gap-4">
              <Field>
-                <FieldLabel htmlFor="status">Status</FieldLabel>
+                <FieldLabel htmlFor="status">{tTasks("status")}</FieldLabel>
                 <Select name="status" defaultValue={task?.status || "Todo"} disabled={loading}>
                   <SelectTrigger id="status">
-                    <SelectValue placeholder="Selecione..." />
+                    <SelectValue placeholder={tCommon("select") || "Select..."} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Todo">{tFields("Todo")}</SelectItem>
@@ -188,10 +190,10 @@ export function TaskDialog({
                 </Select>
              </Field>
              <Field>
-                <FieldLabel htmlFor="priority">Prioridade</FieldLabel>
+                <FieldLabel htmlFor="priority">{tTasks("priority")}</FieldLabel>
                 <Select name="priority" defaultValue={task?.priority || "Medium"} disabled={loading}>
                   <SelectTrigger id="priority">
-                    <SelectValue placeholder="Selecione..." />
+                    <SelectValue placeholder={tCommon("select") || "Select..."} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Low">{tFields("Low")}</SelectItem>
@@ -203,19 +205,19 @@ export function TaskDialog({
           </div>
           <div className="grid grid-cols-2 gap-4">
              <Field>
-                <FieldLabel>Responsável</FieldLabel>
+                <FieldLabel>{tTasks("assignee")}</FieldLabel>
                 <div className="flex items-center gap-2 h-9 px-3 rounded-md border bg-muted/50">
                   <Avatar className="size-5">
                     <AvatarImage src={currentUser?.avatar} />
                     <AvatarFallback className="text-[10px]">
-                      {currentUser?.name?.substring(0, 2)?.toUpperCase() || "EU"}
+                      {currentUser?.name?.substring(0, 2)?.toUpperCase() || "ME"}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-sm truncate">{currentUser?.name || "Eu"}</span>
+                  <span className="text-sm truncate">{currentUser?.name || "Me"}</span>
                 </div>
              </Field>
              <Field>
-                <FieldLabel htmlFor="dueDate">Prazo de Entrega</FieldLabel>
+                <FieldLabel htmlFor="dueDate">{tTasks("dueDateLabel")}</FieldLabel>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -226,7 +228,7 @@ export function TaskDialog({
                       )}
                       disabled={loading}
                     >
-                      {date ? format(date, "PPP") : <span>Escolha a data</span>}
+                      {date ? format(date, "PPP") : <span>{tTasks("chooseDate")}</span>}
                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
@@ -242,7 +244,7 @@ export function TaskDialog({
              </Field>
           </div>
           <Field>
-            <FieldLabel htmlFor="tags">Tags</FieldLabel>
+            <FieldLabel htmlFor="tags">{tTasks("tags")}</FieldLabel>
             <div className="flex flex-col gap-2">
               <div className="flex flex-wrap gap-2">
                 {tags.map((t) => (
@@ -256,14 +258,14 @@ export function TaskDialog({
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleTagKeyDown}
-                placeholder="Pressione Enter ou vírgula para registrar a label..."
+                placeholder={tTasks("tagsPlaceholder") || "Press enter to add tag..."}
                 disabled={loading}
               />
             </div>
           </Field>
           <div className="flex justify-end mt-4">
             <Button type="submit" disabled={loading}>
-              {loading ? "Salvando..." : (isEdit ? "Aplicar Mudanças" : "Criar Tarefa")}
+              {loading ? tCommon("save") + "..." : (isEdit ? tCommon("save") : tTasks("addTask"))}
             </Button>
           </div>
         </form>

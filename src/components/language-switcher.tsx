@@ -1,11 +1,21 @@
 'use client';
 
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { useRouter, usePathname } from '@/i18n/routing';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
+
+const locales = [
+  { code: 'en', label: 'English', flag: '🇺🇸' },
+  { code: 'pt-BR', label: 'Português', flag: '🇧🇷' },
+];
 
 export function LanguageSwitcher() {
-  const t = useTranslations('Navigation');
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -14,33 +24,31 @@ export function LanguageSwitcher() {
     router.replace(pathname, { locale: value });
   }
 
+  const currentLocale = locales.find((l) => l.code === locale) || locales[0];
+
   return (
-    <TooltipProvider>
-      <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-lg">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => onSelectChange("en")}
-              className={`flex h-7 w-8 items-center justify-center rounded-md transition-all ${locale === 'en' ? 'bg-background shadow-sm opacity-100' : 'opacity-50 hover:opacity-100 hover:bg-background/50'}`}
-            >
-              <span className="text-lg leading-none">🇺🇸</span>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top">English</TooltipContent>
-        </Tooltip>
-        
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => onSelectChange("pt-BR")}
-              className={`flex h-7 w-8 items-center justify-center rounded-md transition-all ${locale === 'pt-BR' ? 'bg-background shadow-sm opacity-100' : 'opacity-50 hover:opacity-100 hover:bg-background/50'}`}
-            >
-              <span className="text-lg leading-none">🇧🇷</span>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top">Português</TooltipContent>
-        </Tooltip>
-      </div>
-    </TooltipProvider>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="rounded-full size-10 hover:bg-muted transition-colors border"
+        >
+          <span className="text-xl leading-none">{currentLocale.flag}</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-40">
+        {locales.map((l) => (
+          <DropdownMenuItem
+            key={l.code}
+            onClick={() => onSelectChange(l.code)}
+            className={`flex items-center gap-3 cursor-pointer ${locale === l.code ? 'bg-muted font-medium' : ''}`}
+          >
+            <span className="text-lg">{l.flag}</span>
+            <span>{l.label}</span>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

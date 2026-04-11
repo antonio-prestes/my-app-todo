@@ -10,6 +10,7 @@ import { getTasks } from "@/app/actions/tasks";
 import { getWorkspace, getWorkspaces } from "@/app/actions/workspaces";
 import { TaskDialog } from "@/components/task-dialog";
 import { CirclePlusIcon } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 export default async function WorkspacePage({
   params,
@@ -18,6 +19,7 @@ export default async function WorkspacePage({
   params: Promise<{ workspaceId: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  const t = await getTranslations("Tasks");
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -72,7 +74,7 @@ export default async function WorkspacePage({
         >
           <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
             <CirclePlusIcon className="size-4" />
-            Nova Tarefa
+            {t("addTask")}
           </button>
         </TaskDialog>
       </div>

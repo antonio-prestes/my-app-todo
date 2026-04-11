@@ -1,4 +1,13 @@
 {
+  "Common": {
+    "appName": "My To Do App",
+    "openMenu": "Open menu",
+    "areYouSure": "Are you absolutely sure?",
+    "back": "Back",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete"
+  },
   "Auth": {
     "welcome": "Welcome back",
     "loginDescription": "Login to your account",
@@ -21,16 +30,44 @@
     "loginLink": "Login",
     "confirmEmailMessage": "Account created! Please check your email for the confirmation link."
   },
+  "Dashboard": {
+    "title": "My To Do App",
+    "description": "Manage your projects and tasks in dedicated spaces.",
+    "emptyTitle": "No workspaces found",
+    "emptyDescription": "Start by creating your first workspace to organize your tasks.",
+    "createFirst": "Create my first workspace",
+    "tasksCount": "{count} tasks",
+    "createdAt": "Created at {date}"
+  },
   "Tasks": {
     "title": "Tasks",
     "description": "Manage your tasks and projects in a Notion-style layout.",
     "addTask": "Add Task",
+    "editTask": "Edit Task",
+    "deleteTask": "Delete Task",
     "status": "Status",
     "priority": "Priority",
     "assignee": "Assignee",
     "dueDate": "Due Date",
     "tags": "Tags",
-    "searchPlaceholder": "Search tasks..."
+    "unassigned": "Unassigned",
+    "columns": "Columns",
+    "noResults": "No results found.",
+    "rowsSelected": "{selected} of {total} row(s) selected.",
+    "searchPlaceholder": "Search tasks...",
+    "titleLabel": "Task Title",
+    "titlePlaceholder": "Task title...",
+    "descriptionLabel": "Description (optional)",
+    "descriptionPlaceholder": "Add more details...",
+    "statusLabel": "Status",
+    "priorityLabel": "Priority",
+    "assigneeLabel": "Assignee",
+    "dueDateLabel": "Due Date",
+    "chooseDate": "Choose a date",
+    "tagsLabel": "Tags",
+    "tagsPlaceholder": "Press Enter to add tag...",
+    "addTaskDescription": "Fill in the details below to add a new task.",
+    "editTaskDescription": "Update the details for this task."
   },
   "Navigation": {
     "dashboard": "Dashboard",
@@ -50,15 +87,42 @@
     "High": "High"
   },
   "Workspace": {
-    "title": "Workspaces",
+    "title": "Your Workspaces",
     "newWorkspace": "New Workspace",
     "name": "Name",
     "description": "Description",
     "create": "Create Workspace",
     "edit": "Edit Workspace",
     "delete": "Delete Workspace",
+    "deleteConfirmTitle": "Delete Workspace?",
+    "clickToChangeIcon": "Click icon to change",
+    "nameLabel": "Name",
+    "descriptionLabel": "Description (optional)",
     "emptyState": "No workspaces created yet. Create your first one!",
     "tableView": "Table",
-    "kanbanView": "Kanban"
+    "kanbanView": "Kanban",
+    "createDescription": "Create a new workspace to organize your tasks.",
+    "editDescription": "Update your workspace information.",
+    "createSuccess": "Workspace created successfully!",
+    "editSuccess": "Workspace updated successfully!",
+    "deleteSuccess": "Workspace deleted successfully!",
+    "deleteError": "Error deleting workspace.",
+    "saveError": "Error saving workspace."
+  },
+  "Account": {
+    "title": "My Account",
+    "description": "Edit your profile info and change your avatar.",
+    "adjustPhoto": "Adjust your profile photo.",
+    "clickToChangePhoto": "Click photo to change",
+    "fullName": "Full Name",
+    "email": "Email"
+  },
+  "Stats": {
+    "totalRevenue": "Total Revenue",
+    "newCustomers": "New Customers",
+    "activeAccounts": "Active Accounts",
+    "engagementTargets": "Engagement exceed targets",
+    "growthRate": "Growth Rate",
+    "growthProjections": "Meets growth projections"
   }
 }

@@ -33,7 +33,9 @@ interface AccountModalProps {
 }
 
 export function AccountModal({ open, onOpenChange, user }: AccountModalProps) {
-  const t = useTranslations("Auth");
+  const t = useTranslations("Account");
+  const tAuth = useTranslations("Auth");
+  const tc = useTranslations("Common");
   const router = useRouter();
   const supabase = createClient();
   const [name, setName] = React.useState(user.name);
@@ -132,12 +134,12 @@ export function AccountModal({ open, onOpenChange, user }: AccountModalProps) {
         throw new Error(result.error);
       }
 
-      toast.success("Perfil atualizado com sucesso!");
+      toast.success(t("updateSuccess") || "Profile updated successfully!");
       onOpenChange(false);
       setImageToCrop(null);
       router.refresh();
     } catch (error: any) {
-      toast.error(error.message || "Erro ao atualizar perfil");
+      toast.error(error.message || t("updateError") || "Error updating profile");
       console.error("Update Profile Error:", error);
     } finally {
       setLoading(false);
@@ -151,9 +153,9 @@ export function AccountModal({ open, onOpenChange, user }: AccountModalProps) {
     }}>
       <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
-          <DialogTitle>Minha Conta</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>
-            {imageToCrop ? "Ajuste sua foto de perfil." : "Edite suas informações de perfil e altere seu avatar."}
+            {imageToCrop ? t("adjustPhoto") || "Adjust your profile photo." : t("description") || "Edit your profile info and change your avatar."}
           </DialogDescription>
         </DialogHeader>
         
@@ -188,7 +190,7 @@ export function AccountModal({ open, onOpenChange, user }: AccountModalProps) {
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="ghost" size="sm" onClick={() => setImageToCrop(null)}>
-                  Voltar
+                  {tc("back")}
                 </Button>
               </div>
             </div>
@@ -213,21 +215,21 @@ export function AccountModal({ open, onOpenChange, user }: AccountModalProps) {
                     onChange={handleFileChange}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground font-medium">Clique na foto para alterar</p>
+                <p className="text-xs text-muted-foreground font-medium">{t("clickToChangePhoto")}</p>
               </div>
               <div className="grid gap-4">
                 <Field>
-                  <FieldLabel htmlFor="name">Nome completo</FieldLabel>
+                  <FieldLabel htmlFor="name">{t("fullName")}</FieldLabel>
                   <Input
                     id="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Seu nome"
+                    placeholder={tAuth("name")}
                     className="h-10"
                   />
                 </Field>
                 <Field>
-                  <FieldLabel htmlFor="email">E-mail</FieldLabel>
+                  <FieldLabel htmlFor="email">{t("email")}</FieldLabel>
                   <Input
                     id="email"
                     value={user.email}
@@ -245,11 +247,11 @@ export function AccountModal({ open, onOpenChange, user }: AccountModalProps) {
             setImageToCrop(null)
             onOpenChange(false)
           }}>
-            {imageToCrop ? "Cancelar" : "Fechar"}
+            {imageToCrop ? tc("cancel") : tc("back")}
           </Button>
           <Button onClick={handleUpdateProfile} disabled={loading} className="min-w-[120px]">
             {loading ? <Loader2Icon className="mr-2 h-4 w-4 animate-spin" /> : null}
-            {imageToCrop ? "Aplicar e Salvar" : "Salvar alterações"}
+            {imageToCrop ? tc("save") : tc("save")}
           </Button>
         </DialogFooter>
       </DialogContent>

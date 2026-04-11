@@ -59,7 +59,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
           {task.description && (
             <div className="flex flex-col gap-1.5">
               <div className="text-sm text-muted-foreground flex items-center gap-2 font-medium">
-                <AlignLeftIcon className="size-4" /> Descrição
+                <AlignLeftIcon className="size-4" /> {tTasks("descriptionLabel")}
               </div>
               <p className="text-sm text-foreground leading-relaxed bg-muted/50 rounded-lg p-3">
                 {task.description}
@@ -100,7 +100,7 @@ export function TaskDetailModal({ task, open, onOpenChange }: TaskDetailModalPro
                     {task.assignee?.substring(0, 2)?.toUpperCase() || "?"}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-medium">{task.assignee || "Não atribuído"}</span>
+                <span className="text-sm font-medium">{task.assignee || tTasks("unassigned")}</span>
               </div>
             </div>
 
