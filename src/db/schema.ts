@@ -15,12 +15,54 @@ export const workspaces = pgTable("workspaces", {
   name: text("name").notNull(),
   description: text("description"),
   emoji: text("emoji"),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }), // keeping to track original creator for simplicity, but members table is main auth
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+});
+
+export const workspaceMembers = pgTable("workspace_members", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  role: text("role").notNull().default("guest"), // 'owner' | 'guest'
+  createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
+});
+
+export const invitations = pgTable("invitations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+  email: text("email").notNull(),
+  role: text("role").notNull().default("guest"),
+  status: text("status").notNull().default("pending"), // pending, accepted, declined
+  token: text("token").notNull().unique(),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow(),
 });
 
 export const workspacesRelations = relations(workspaces, ({ many }) => ({
   tasks: many(tasks),
+  members: many(workspaceMembers),
+  invitations: many(invitations),
+}));
+
+export const workspaceMembersRelations = relations(workspaceMembers, ({ one }) => ({
+  workspace: one(workspaces, {
+    fields: [workspaceMembers.workspaceId],
+    references: [workspaces.id],
+  }),
+  user: one(users, {
+    fields: [workspaceMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+  workspaceMembers: many(workspaceMembers),
+}));
+
+export const invitationsRelations = relations(invitations, ({ one }) => ({
+  workspace: one(workspaces, {
+    fields: [invitations.workspaceId],
+    references: [workspaces.id],
+  }),
 }));
 
 export const tasks = pgTable("tasks", {

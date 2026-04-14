@@ -4,10 +4,20 @@ import { getWorkspaces } from "@/app/actions/workspaces";
 import { WorkspaceDialog } from "@/components/workspace-dialog";
 import { FolderIcon, PlusIcon, ListTodoIcon, UsersIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function DashboardPage() {
-  const workspaces = await getWorkspaces();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  const currentUser = user ? {
+    id: user.id,
+    name: user.user_metadata?.display_name || user.email?.split("@")[0] || "User",
+    email: user.email || "",
+    avatar: user.user_metadata?.avatar_url || "https://github.com/shadcn.png",
+  } : undefined;
 
+  const workspaces = await getWorkspaces();
   const t = await getTranslations("Dashboard");
 
   return (
@@ -17,7 +27,7 @@ export default async function DashboardPage() {
           <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
           <p className="text-muted-foreground mt-1">{t("description")}</p>
         </div>
-        <WorkspaceDialog>
+        <WorkspaceDialog currentUser={currentUser}>
           <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98]">
             <PlusIcon className="size-4" />
             {workspaces.length === 0 ? t("createFirst") : t("createNew")}
@@ -32,7 +42,7 @@ export default async function DashboardPage() {
           </div>
           <h3 className="text-xl font-semibold">{t("emptyTitle")}</h3>
           <p className="text-muted-foreground mt-2 max-w-[280px]">{t("emptyDescription")}</p>
-          <WorkspaceDialog>
+          <WorkspaceDialog currentUser={currentUser}>
             <button className="mt-6 font-medium text-primary hover:underline">
               {t("createFirst")}
             </button>

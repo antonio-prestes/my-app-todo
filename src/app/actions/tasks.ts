@@ -1,7 +1,7 @@
 "use server"
 
 import { db } from "@/db/db";
-import { tasks } from "@/db/schema";
+import { tasks, workspaceMembers } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
@@ -14,16 +14,27 @@ async function getAuthUserId() {
   return user?.id;
 }
 
+// Helper to check membership and role
+async function checkMembership(workspaceId: string, userId: string) {
+  const member = await db.query.workspaceMembers.findFirst({
+    where: and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId))
+  });
+  return member;
+}
+
 // Fetch tasks for a specific workspace
 export async function getTasks(workspaceId: string) {
   const userId = await getAuthUserId();
   if (!userId) throw new Error("Unauthorized");
 
+  const isMember = await checkMembership(workspaceId, userId);
+  if (!isMember) throw new Error("Acesso negado.");
+
   return cached(
     cacheKey("tasks", userId, workspaceId),
     async () => {
       const results = await db.select().from(tasks)
-        .where(and(eq(tasks.userId, userId), eq(tasks.workspaceId, workspaceId)))
+        .where(eq(tasks.workspaceId, workspaceId))
         .orderBy(tasks.createdAt);
       return results;
     },
@@ -47,6 +58,9 @@ export async function createTask(data: {
   const userId = await getAuthUserId();
   if (!userId) throw new Error("Unauthorized");
 
+  const isMember = await checkMembership(data.workspaceId, userId);
+  if (!isMember) throw new Error("Acesso negado.");
+
   const result = await db.insert(tasks).values({
     title: data.title,
     description: data.description || null,
@@ -56,11 +70,13 @@ export async function createTask(data: {
     assignee: data.assignee,
     assigneeAvatar: data.assigneeAvatar || null,
     dueDate: data.dueDate,
-    userId,
+    userId, // original creator
     workspaceId: data.workspaceId,
   }).returning();
 
-  // Invalidate tasks cache for this workspace + workspace list (task count changed)
+  // Invalidate tasks cache for this workspace + workspace list
+  // Wait: In a multi-user environment, we should ideally invalidate tag for ALL members of the workspace.
+  // We'll invalidate for this user now. Broad invalidation comes from push events or specific member loops.
   await invalidateCache(
     cacheKey("tasks", userId, data.workspaceId),
     cacheKey("workspaces", userId),
@@ -75,20 +91,21 @@ export async function updateTaskStatus(id: string, newStatus: string) {
   const userId = await getAuthUserId();
   if (!userId) throw new Error("Unauthorized");
 
-  // Get the task first to know which workspace to invalidate
+  // Get the task first
   const [task] = await db.select({ workspaceId: tasks.workspaceId })
     .from(tasks)
-    .where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+    .where(eq(tasks.id, id));
+    
+  if (!task) throw new Error("Task not found");
+
+  const isMember = await checkMembership(task.workspaceId, userId);
+  if (!isMember) throw new Error("Acesso negado.");
 
   await db.update(tasks)
     .set({ status: newStatus })
-    .where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+    .where(eq(tasks.id, id));
 
-  // Invalidate tasks cache for the affected workspace
-  if (task) {
-    await invalidateCache(cacheKey("tasks", userId, task.workspaceId));
-  }
-
+  await invalidateCache(cacheKey("tasks", userId, task.workspaceId));
   return { success: true };
 }
 
@@ -97,22 +114,23 @@ export async function updateTask(id: string, data: Partial<typeof tasks.$inferIn
   const userId = await getAuthUserId();
   if (!userId) throw new Error("Unauthorized");
 
-  // Get the task first to know which workspace to invalidate
   const [task] = await db.select({ workspaceId: tasks.workspaceId })
     .from(tasks)
-    .where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+    .where(eq(tasks.id, id));
+
+  if (!task) throw new Error("Task not found");
+
+  const isMember = await checkMembership(task.workspaceId, userId);
+  if (!isMember) throw new Error("Acesso negado.");
 
   await db.update(tasks)
     .set(data)
-    .where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+    .where(eq(tasks.id, id));
 
-  // Invalidate tasks and workspace list (assignee avatars may have changed)
-  if (task) {
-    await invalidateCache(
-      cacheKey("tasks", userId, task.workspaceId),
-      cacheKey("workspaces", userId),
-    );
-  }
+  await invalidateCache(
+    cacheKey("tasks", userId, task.workspaceId),
+    cacheKey("workspaces", userId),
+  );
 
   revalidatePath("/dashboard", "layout");
   return { success: true };
@@ -123,20 +141,25 @@ export async function deleteTask(id: string) {
   const userId = await getAuthUserId();
   if (!userId) throw new Error("Unauthorized");
 
-  // Get the task first to know which workspace to invalidate
   const [task] = await db.select({ workspaceId: tasks.workspaceId })
     .from(tasks)
-    .where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+    .where(eq(tasks.id, id));
 
-  await db.delete(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+  if (!task) throw new Error("Task not found");
 
-  // Invalidate tasks cache + workspace list (task count changed)
-  if (task) {
-    await invalidateCache(
-      cacheKey("tasks", userId, task.workspaceId),
-      cacheKey("workspaces", userId),
-    );
+  const isMember = await checkMembership(task.workspaceId, userId);
+  if (!isMember) throw new Error("Acesso negado.");
+  
+  if (isMember.role !== "owner") {
+    throw new Error("Somente o proprietário do workspace pode excluir tarefas.");
   }
+
+  await db.delete(tasks).where(eq(tasks.id, id));
+
+  await invalidateCache(
+    cacheKey("tasks", userId, task.workspaceId),
+    cacheKey("workspaces", userId),
+  );
 
   revalidatePath("/dashboard", "layout");
   return { success: true };

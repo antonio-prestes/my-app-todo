@@ -36,6 +36,11 @@ export default async function WorkspacePage({
   const workspaceId = resolvedParams.workspaceId;
   const isKanban = resolvedSearchParams.view === "kanban";
 
+  // Redirect legacy invite URLs smoothly to the dashboard root
+  if (workspaceId === "invite") {
+    redirect("/dashboard");
+  }
+
   // Fetch workspace details
   const workspace = await getWorkspace(workspaceId);
   if (!workspace) {
@@ -64,7 +69,7 @@ export default async function WorkspacePage({
         </div>
         <TaskDialog
           workspaceId={workspaceId}
-          currentUser={{ name: sessionUser.name, avatar: sessionUser.avatar }}
+          currentUser={{ id: sessionUser.id, name: sessionUser.name, avatar: sessionUser.avatar }}
         >
           <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
             <CirclePlusIcon className="size-4" />

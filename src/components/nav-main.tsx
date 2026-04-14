@@ -53,9 +53,11 @@ interface Workspace {
 export function NavMain({
   workspaces,
   currentPath,
+  currentUser,
 }: {
   workspaces: Workspace[];
   currentPath: string;
+  currentUser?: { id: string; name: string; email: string; avatar: string };
 }) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = React.useState<string | null>(null);
@@ -85,7 +87,7 @@ export function NavMain({
         <SidebarGroupContent className="px-2">
           <SidebarMenu>
             <SidebarMenuItem>
-              <WorkspaceDialog>
+              <WorkspaceDialog currentUser={currentUser}>
                 <SidebarMenuButton
                   tooltip={t("newWorkspace")}
                   className="w-full justify-center bg-primary text-primary-foreground font-semibold py-2.5 rounded-lg transition-all hover:bg-primary/90 hover:text-primary-foreground active:scale-[0.98] shadow-sm"
@@ -127,7 +129,7 @@ export function NavMain({
                       </SidebarMenuAction>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-[160px]">
-                      <WorkspaceDialog workspace={ws}>
+                      <WorkspaceDialog workspace={ws} currentUser={currentUser}>
                         <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer">
                           <PencilIcon className="mr-2 h-4 w-4" />
                           {t("edit")}

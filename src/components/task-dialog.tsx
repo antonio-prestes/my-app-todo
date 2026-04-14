@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { createTask, updateTask } from "@/app/actions/tasks"
+import { getWorkspaceMembers } from "@/app/actions/workspaces"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -31,10 +32,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTranslations } from "next-intl"
 import { format, parseISO } from "date-fns"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, Loader2Icon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface CurrentUser {
+  id: string;
   name: string;
   avatar: string;
 }
@@ -62,6 +64,11 @@ export function TaskDialog({
   const [date, setDate] = React.useState<Date | undefined>(
     task?.dueDate ? parseISO(task.dueDate) : undefined
   )
+  
+  // Members state
+  const [members, setMembers] = React.useState<any[]>([]);
+  const [loadingMembers, setLoadingMembers] = React.useState(false);
+  const [selectedMemberId, setSelectedMemberId] = React.useState<string>("");
 
   const isEdit = !!task;
 
@@ -73,8 +80,31 @@ export function TaskDialog({
     if (open) {
       setTags(task?.tags || []);
       setDate(task?.dueDate ? parseISO(task.dueDate) : undefined);
+      
+      if (workspaceId) {
+        setLoadingMembers(true);
+        getWorkspaceMembers(workspaceId)
+          .then(data => {
+            const fetchedMembers = data || [];
+            setMembers(fetchedMembers);
+            
+            // Re-select based on assignee name or active user
+            let matchedId = "";
+            if (task?.assignee) {
+              const m = fetchedMembers.find(f => f.name === task.assignee);
+              if (m) matchedId = m.id;
+            }
+            if (!matchedId && currentUser && !selectedMemberId) {
+              const m = fetchedMembers.find(f => f.name === currentUser.name);
+              if (m) matchedId = m.id;
+            }
+            setSelectedMemberId(matchedId);
+          })
+          .catch(console.error)
+          .finally(() => setLoadingMembers(false));
+      }
     }
-  }, [open, task]);
+  }, [open, task, workspaceId, currentUser]);
 
   function handleTagKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' || e.key === ',') {
@@ -107,14 +137,16 @@ export function TaskDialog({
     }
 
     try {
+      const selectedMember = members.find(m => m.id === selectedMemberId) || null;
+
       const payload = {
         title,
         description: description || undefined,
         status: status || "Todo",
         priority: priority || "Medium",
         tags,
-        assignee: currentUser?.name || "Me",
-        assigneeAvatar: currentUser?.avatar || undefined,
+        assignee: selectedMember ? selectedMember.name : (currentUser?.name || "Me"),
+        assigneeAvatar: selectedMember ? selectedMember.avatar : (currentUser?.avatar || undefined),
         dueDate: date ? format(date, "yyyy-MM-dd") : undefined
       };
 
@@ -206,15 +238,49 @@ export function TaskDialog({
           <div className="grid grid-cols-2 gap-4">
              <Field>
                 <FieldLabel>{tTasks("assignee")}</FieldLabel>
-                <div className="flex items-center gap-2 h-9 px-3 rounded-md border bg-muted/50">
-                  <Avatar className="size-5">
-                    <AvatarImage src={currentUser?.avatar} />
-                    <AvatarFallback className="text-[10px]">
-                      {currentUser?.name?.substring(0, 2)?.toUpperCase() || "ME"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm truncate">{currentUser?.name || "Me"}</span>
-                </div>
+                <Select
+                  value={selectedMemberId}
+                  onValueChange={setSelectedMemberId}
+                  disabled={loading || loadingMembers}
+                >
+                  <SelectTrigger>
+                    {loadingMembers ? (
+                      <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
+                    ) : (
+                      <SelectValue placeholder="Selecione..." />
+                    )}
+                  </SelectTrigger>
+                  <SelectContent>
+                    {members.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="size-5">
+                            <AvatarImage src={member.avatar} />
+                            <AvatarFallback className="text-[10px]">
+                              {member.name?.substring(0, 2).toUpperCase() || "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="truncate">
+                            {member.name} {member.id === currentUser?.id ? "(Você)" : ""}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                    {members.length === 0 && currentUser && (
+                      <SelectItem value="fallback_current">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="size-5">
+                            <AvatarImage src={currentUser.avatar} />
+                            <AvatarFallback className="text-[10px]">
+                              {currentUser.name?.substring(0, 2).toUpperCase() || "ME"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="truncate">{currentUser.name} (Você)</span>
+                        </div>
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
              </Field>
              <Field>
                 <FieldLabel htmlFor="dueDate">{tTasks("dueDateLabel")}</FieldLabel>

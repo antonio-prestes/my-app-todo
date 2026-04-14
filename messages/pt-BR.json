@@ -116,6 +116,7 @@
     "createSuccess": "Workspace criado com sucesso!",
     "editSuccess": "Workspace atualizado com sucesso!",
     "deleteSuccess": "Workspace excluído com sucesso!",
+    "next": "Continuar",
     "deleteError": "Erro ao excluir workspace.",
     "saveError": "Erro ao salvar workspace."
   },

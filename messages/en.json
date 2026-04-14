@@ -116,6 +116,7 @@
     "createSuccess": "Workspace created successfully!",
     "editSuccess": "Workspace updated successfully!",
     "deleteSuccess": "Workspace deleted successfully!",
+    "next": "Next",
     "deleteError": "Error deleting workspace.",
     "saveError": "Error saving workspace."
   },

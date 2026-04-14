@@ -29,6 +29,12 @@ export default async function proxy(request: NextRequest) {
   // Refresh the auth token — this triggers setAll if cookies need updating
   await supabase.auth.getUser();
 
+  const inviteToken = request.nextUrl.searchParams.get("invite_token") || request.nextUrl.searchParams.get("token");
+  if (inviteToken) {
+    // Keep it for 1 day
+    intlResponse.cookies.set("invite_token", inviteToken, { maxAge: 60 * 60 * 24, path: "/" });
+  }
+
   return intlResponse;
 }
 

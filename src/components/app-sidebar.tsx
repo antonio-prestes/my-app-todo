@@ -61,7 +61,12 @@ export function AppSidebar({
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain workspaces={workspaces} currentPath={pathname} />
+        <NavMain workspaces={workspaces} currentPath={pathname} currentUser={user ? {
+          id: user.id,
+          name: user.name || "User",
+          email: user.email || "",
+          avatar: user.avatar || "https://github.com/shadcn.png"
+        } : defaultUserMock} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser
