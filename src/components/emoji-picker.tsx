@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { SmileIcon } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useTheme } from "next-themes"
+import { Theme } from "emoji-picker-react"
 
 // Import EmojiPicker dynamically to avoid SSR issues
 const Picker = dynamic(() => import("emoji-picker-react"), { ssr: false })
@@ -36,7 +37,7 @@ export function EmojiPicker({ value, onChange, children }: EmojiPickerProps) {
               onChange(emojiData.emoji)
               setOpen(false)
             }}
-            theme={theme === "dark" ? "dark" : "light"}
+            theme={theme === "dark" ? Theme.DARK : Theme.LIGHT}
             lazyLoadEmojis={true}
             searchPlaceholder="Pesquisar emoji..."
             previewConfig={{ showPreview: false }}
