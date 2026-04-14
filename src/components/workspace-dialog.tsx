@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { createWorkspace, updateWorkspace, inviteUser } from "@/app/actions/workspaces"
+import { createWorkspace, updateWorkspace, inviteUser, getWorkspaceMembers } from "@/app/actions/workspaces"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -51,6 +51,9 @@ export function WorkspaceDialog({ children, workspace, currentUser }: WorkspaceD
 
   const [selectedEmoji, setSelectedEmoji] = React.useState(workspace?.emoji || "📁")
 
+  const [members, setMembers] = React.useState<any[]>([])
+  const [loadingMembers, setLoadingMembers] = React.useState(false)
+
   React.useEffect(() => {
     setMounted(true)
   }, [])
@@ -65,8 +68,16 @@ export function WorkspaceDialog({ children, workspace, currentUser }: WorkspaceD
         setCreatedWorkspaceId(null);
         setInviteEmail("");
       }, 300);
+    } else {
+      if (isEdit && workspace?.id) {
+        setLoadingMembers(true);
+        getWorkspaceMembers(workspace.id)
+          .then(data => setMembers(data || []))
+          .catch(console.error)
+          .finally(() => setLoadingMembers(false));
+      }
     }
-  }, [open]);
+  }, [open, isEdit, workspace?.id]);
 
   async function onSubmitStep1(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -104,8 +115,8 @@ export function WorkspaceDialog({ children, workspace, currentUser }: WorkspaceD
     }
   }
 
-  async function handleInvite(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleInvite(e?: React.FormEvent) {
+    if (e) e.preventDefault()
     const targetWsId = isEdit ? workspace?.id : createdWorkspaceId;
     if (!targetWsId || !inviteEmail.trim()) return;
 
@@ -193,6 +204,61 @@ export function WorkspaceDialog({ children, workspace, currentUser }: WorkspaceD
                 className="h-10"
               />
             </Field>
+
+            {isEdit && (
+              <div className="flex flex-col gap-3 mt-4 border-t pt-4">
+                <div className="flex flex-col">
+                  <h4 className="text-sm font-medium">Membros da Equipe</h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">Visualize e convide membros para o workspace.</p>
+                </div>
+                
+                {loadingMembers ? (
+                  <div className="flex justify-center p-4"><Loader2Icon className="size-4 animate-spin text-muted-foreground" /></div>
+                ) : (
+                  <div className="flex flex-col gap-2 max-h-[160px] overflow-y-auto pr-1">
+                    {members.map(member => (
+                      <div key={member.id} className="flex items-center gap-3 bg-muted/40 p-2 rounded-lg border border-border/50">
+                        <Avatar className="h-8 w-8 border">
+                          <AvatarImage src={member.avatar} />
+                          <AvatarFallback className="bg-primary/5 text-xs text-primary font-medium">
+                            {member.name ? member.name.substring(0, 2).toUpperCase() : "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col flex-1 truncate">
+                          <span className="text-sm font-medium leading-none truncate">
+                            {member.name} {member.id === currentUser?.id ? "(Você)" : ""}
+                          </span>
+                          <span className="text-xs text-muted-foreground mt-1 truncate">{member.email}</span>
+                        </div>
+                        <div className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border ${member.role === 'owner' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-muted text-muted-foreground'}`}>
+                          {member.role === "owner" ? "Owner" : "Guest"}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                <div className="flex gap-2 items-center mt-1">
+                  <Input 
+                    type="email" 
+                    placeholder="E-mail do convidado..." 
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    className="flex-1 h-9"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (inviteEmail) handleInvite();
+                      }
+                    }}
+                  />
+                  <Button type="button" variant="secondary" onClick={() => handleInvite()} disabled={inviting || !inviteEmail} className="h-9 px-3">
+                    {inviting ? <Loader2Icon className="size-4 animate-spin mr-2" /> : <SendIcon className="size-4 mr-2" />}
+                    Convidar
+                  </Button>
+                </div>
+              </div>
+            )}
             <div className="flex justify-end mt-2">
               <Button type="submit" disabled={loading} className="min-w-[140px]">
                 {loading && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
