@@ -20,7 +20,7 @@ export default async function DashboardPage() {
         <WorkspaceDialog>
           <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98]">
             <PlusIcon className="size-4" />
-            {t("createFirst")}
+            {workspaces.length === 0 ? t("createFirst") : t("createNew")}
           </button>
         </WorkspaceDialog>
       </header>

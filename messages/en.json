@@ -36,6 +36,7 @@
     "emptyTitle": "No workspaces found",
     "emptyDescription": "Start by creating your first workspace to organize your tasks.",
     "createFirst": "Create my first workspace",
+    "createNew": "Create new workspace",
     "tasksCount": "{count} tasks",
     "createdAt": "Created at {date}"
   },

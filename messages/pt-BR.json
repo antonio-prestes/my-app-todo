@@ -36,6 +36,7 @@
     "emptyTitle": "Nenhum workspace encontrado",
     "emptyDescription": "Comece criando seu primeiro workspace para organizar suas tarefas.",
     "createFirst": "Criar meu primeiro workspace",
+    "createNew": "Criar novo workspace",
     "tasksCount": "{count} tarefas",
     "createdAt": "Criado em {date}"
   },
