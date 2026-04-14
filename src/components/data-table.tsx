@@ -29,6 +29,12 @@ import {
   DropdownMenuItem
 } from "@/components/ui/dropdown-menu"
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
   Table,
   TableBody,
   TableCell,
@@ -47,7 +53,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Columns3Icon, ChevronDownIcon, CircleIcon, MoreHorizontalIcon } from "lucide-react"
+import { Columns3Icon, ChevronDownIcon, CircleIcon, MoreHorizontalIcon, ArrowUpDownIcon, FilterIcon } from "lucide-react"
 import { TaskDialog } from "@/components/task-dialog"
 import { TaskDetailModal, PriorityChip } from "@/components/task-detail-modal"
 import { deleteTask } from "@/app/actions/tasks"
@@ -169,7 +175,18 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
     },
     {
       accessorKey: "title",
-      header: tTasks("title"),
+      header: ({ column }) => {
+        return (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="-ml-4 h-8 data-[state=open]:bg-accent"
+          >
+            <span>{tTasks("title")}</span>
+            <ArrowUpDownIcon className="ml-2 h-4 w-4 opacity-50" />
+          </Button>
+        )
+      },
       cell: ({ row }) => (
         <Button
           variant="link"
@@ -205,7 +222,19 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
     },
     {
       accessorKey: "status",
-      header: tTasks("status"),
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="-ml-4 h-8 data-[state=open]:bg-accent"
+        >
+          <span>{tTasks("status")}</span>
+          <ArrowUpDownIcon className="ml-2 h-4 w-4 opacity-50" />
+        </Button>
+      ),
+      filterFn: (row, id, value) => {
+        return value.includes(row.getValue(id))
+      },
       cell: ({ row }) => {
         const val = row.getValue("status") as string;
         return (
@@ -218,7 +247,19 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
     },
     {
       accessorKey: "priority",
-      header: tTasks("priority"),
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="-ml-4 h-8 data-[state=open]:bg-accent"
+        >
+          <span>{tTasks("priority")}</span>
+          <ArrowUpDownIcon className="ml-2 h-4 w-4 opacity-50" />
+        </Button>
+      ),
+      filterFn: (row, id, value) => {
+        return value.includes(row.getValue(id))
+      },
       cell: ({ row }) => {
          const p = row.getValue("priority") as string;
          return <PriorityChip priority={p} />;
@@ -226,13 +267,25 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
     },
     {
       accessorKey: "assignee",
-      header: tTasks("assignee"),
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="-ml-4 h-8 data-[state=open]:bg-accent"
+        >
+          <span>{tTasks("assignee")}</span>
+          <ArrowUpDownIcon className="ml-2 h-4 w-4 opacity-50" />
+        </Button>
+      ),
+      filterFn: (row, id, value) => {
+        return value.includes(row.getValue(id))
+      },
       cell: ({ row }) => {
         const val = row.getValue("assignee") as string;
         const avatar = row.original.assigneeAvatar;
         return (
           <div className="flex items-center gap-2">
-             <Avatar className="size-6">
+             <Avatar className="size-8">
                <AvatarImage src={avatar || undefined} alt={val} />
                <AvatarFallback className="text-xs bg-primary/10 text-primary font-semibold">
                  {val ? val.substring(0, 2).toUpperCase() : "?"}
@@ -245,7 +298,16 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
     },
     {
       accessorKey: "dueDate",
-      header: tTasks("dueDate"),
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="-ml-4 h-8 data-[state=open]:bg-accent"
+        >
+          <span>{tTasks("dueDate")}</span>
+          <ArrowUpDownIcon className="ml-2 h-4 w-4 opacity-50" />
+        </Button>
+      ),
       cell: ({ row }) => <span className="text-sm text-muted-foreground">{row.getValue("dueDate") || "—"}</span>,
     },
     {
@@ -293,15 +355,225 @@ export function DataTable({ data, workspaceId }: { data: Task[]; workspaceId?: s
     <>
       <div className="w-full flex-col justify-start gap-4 flex px-4 lg:px-6">
         <div className="flex items-center justify-between">
-          <Input
-            placeholder={tTasks("searchPlaceholder")}
-            value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("title")?.setFilterValue(event.target.value)
-            }
-            className="max-w-sm bg-background"
-          />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1">
+            <div className="flex items-center gap-2 max-w-sm">
+              <Input
+                placeholder={tTasks("searchPlaceholder")}
+                value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
+                onChange={(event) =>
+                  table.getColumn("title")?.setFilterValue(event.target.value)
+                }
+                className="bg-background min-w-[200px]"
+              />
+            </div>
+            
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Status Filter */}
+              {table.getColumn("status") && (() => {
+                const selected = (table.getColumn("status")?.getFilterValue() as string[]) || [];
+                const isActive = selected.length > 0;
+                return (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className={`h-9 border-dashed ${isActive ? "border-primary bg-primary/5 text-primary" : ""}`}
+                      >
+                        <FilterIcon className="mr-2 h-4 w-4 opacity-50" />
+                        Status
+                        {isActive && (
+                          <>
+                            <div className="mx-2 h-4 w-[1px] bg-border" />
+                            <div className="flex gap-1">
+                              {selected.length > 2 ? (
+                                <Badge variant="secondary" className="rounded-sm px-1 font-normal lg:hidden">
+                                  {selected.length}
+                                </Badge>
+                              ) : null}
+                              <div className="hidden space-x-1 lg:flex">
+                                {selected.length > 2 ? (
+                                  <Badge variant="secondary" className="rounded-sm px-1 font-normal">
+                                    {selected.length} selecionados
+                                  </Badge>
+                                ) : (
+                                  selected.map((v) => (
+                                    <Badge variant="secondary" key={v} className="rounded-sm px-1 font-normal">
+                                      {tFields(v)}
+                                    </Badge>
+                                  ))
+                                )}
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-[200px]">
+                      {["Todo", "InProgress", "Review", "Done"].map(v => {
+                        const isSelected = selected.includes(v);
+                        return (
+                          <DropdownMenuCheckboxItem 
+                            key={v} 
+                            checked={isSelected}
+                            onCheckedChange={(checked) => {
+                              const next = checked ? [...selected, v] : selected.filter(c => c !== v);
+                              table.getColumn("status")?.setFilterValue(next.length ? next : undefined);
+                            }}
+                          >
+                            <div className="flex items-center gap-2">
+                              {getStatusIcon(v)}
+                              <span>{tFields(v)}</span>
+                            </div>
+                          </DropdownMenuCheckboxItem>
+                        )
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )
+              })()}
+
+              {/* Priority Filter */}
+              {table.getColumn("priority") && (() => {
+                const selected = (table.getColumn("priority")?.getFilterValue() as string[]) || [];
+                const isActive = selected.length > 0;
+                return (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className={`h-9 border-dashed ${isActive ? "border-primary bg-primary/5 text-primary" : ""}`}
+                      >
+                        <FilterIcon className="mr-2 h-4 w-4 opacity-50" />
+                        {tTasks("priority")}
+                        {isActive && (
+                          <>
+                            <div className="mx-2 h-4 w-[1px] bg-border" />
+                            <div className="flex gap-1">
+                              {selected.length > 2 ? (
+                                <Badge variant="secondary" className="rounded-sm px-1 font-normal">
+                                  {selected.length} selecionados
+                                </Badge>
+                              ) : (
+                                selected.map((v) => (
+                                  <Badge variant="secondary" key={v} className="rounded-sm px-1 font-normal">
+                                    {tFields(v)}
+                                  </Badge>
+                                ))
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-[200px]">
+                      {["Low", "Medium", "High"].map(v => {
+                        const isSelected = selected.includes(v);
+                        return (
+                          <DropdownMenuCheckboxItem 
+                            key={v} 
+                            checked={isSelected}
+                            onCheckedChange={(checked) => {
+                              const next = checked ? [...selected, v] : selected.filter(c => c !== v);
+                              table.getColumn("priority")?.setFilterValue(next.length ? next : undefined);
+                            }}
+                          >
+                            {tFields(v)}
+                          </DropdownMenuCheckboxItem>
+                        )
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )
+              })()}
+
+              {/* Assignee Filter */}
+              {table.getColumn("assignee") && (() => {
+                const selected = (table.getColumn("assignee")?.getFilterValue() as string[]) || [];
+                const isActive = selected.length > 0;
+                
+                // Group by name + avatar to distinguish different users with same name
+                const assigneeMap = new Map();
+                data.forEach(d => {
+                  const key = `${d.assignee}-${d.assigneeAvatar}`;
+                  if (!assigneeMap.has(key)) {
+                    assigneeMap.set(key, { name: d.assignee, avatar: d.assigneeAvatar });
+                  }
+                });
+                const uniqueAssignees = Array.from(assigneeMap.values());
+
+                return (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className={`h-9 border-dashed ${isActive ? "border-primary bg-primary/5 text-primary" : ""}`}
+                      >
+                        <FilterIcon className="mr-2 h-4 w-4 opacity-50" />
+                        {tTasks("assignee")}
+                        {isActive && (
+                          <>
+                            <div className="mx-2 h-4 w-[1px] bg-border" />
+                            <div className="flex gap-1 items-center">
+                              {selected.length > 1 ? (
+                                <Badge variant="secondary" className="rounded-sm px-1 font-normal">
+                                  {selected.length} selecionados
+                                </Badge>
+                              ) : (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Avatar className="size-6 ring-2 ring-background">
+                                        <AvatarImage src={data.find(d => d.assignee === selected[0])?.assigneeAvatar || undefined} />
+                                        <AvatarFallback className="text-[10px]">
+                                          {selected[0] ? selected[0].substring(0, 2).toUpperCase() : "?"}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>{selected[0] || tTasks("unassigned")}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-[200px]">
+                      {uniqueAssignees.map(u => {
+                        const isSelected = selected.includes(u.name);
+                        return (
+                          <DropdownMenuCheckboxItem 
+                            key={`${u.name}-${u.avatar}`} 
+                            checked={isSelected}
+                            onCheckedChange={(checked) => {
+                              const next = checked ? [...selected, u.name] : selected.filter(c => c !== u.name);
+                              table.getColumn("assignee")?.setFilterValue(next.length ? next : undefined);
+                            }}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Avatar className="size-7">
+                                <AvatarImage src={u.avatar || undefined} />
+                                <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">
+                                  {u.name ? u.name.substring(0, 2).toUpperCase() : "?"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span>{u.name || tTasks("unassigned")}</span>
+                            </div>
+                          </DropdownMenuCheckboxItem>
+                        )
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )
+              })()}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap justify-end pl-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">

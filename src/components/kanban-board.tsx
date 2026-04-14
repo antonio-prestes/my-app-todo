@@ -29,6 +29,14 @@ import { CircleIcon } from "lucide-react";
 import { updateTaskStatus } from "@/app/actions/tasks";
 import { PriorityChip } from "@/components/task-detail-modal";
 import { TaskDetailModal } from "@/components/task-detail-modal";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { FilterIcon } from "lucide-react";
 
 // Types
 import { schema } from "./data-table";
@@ -183,6 +191,10 @@ export function KanbanBoard({ data }: { data: Task[] }) {
   const [selectedTask, setSelectedTask] = React.useState<Task | null>(null);
   const [detailOpen, setDetailOpen] = React.useState(false);
 
+  const [priorityFilter, setPriorityFilter] = React.useState<string[]>([]);
+  const [assigneeFilter, setAssigneeFilter] = React.useState<string[]>([]);
+  const [statusFilter, setStatusFilter] = React.useState<string[]>([]);
+
   React.useEffect(() => {
     setTasks(data);
   }, [data]);
@@ -201,6 +213,9 @@ export function KanbanBoard({ data }: { data: Task[] }) {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
+
+  const tTasks = useTranslations("Tasks");
+  const tFields = useTranslations("TaskFields");
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -260,8 +275,195 @@ export function KanbanBoard({ data }: { data: Task[] }) {
     return <div className="w-full h-full min-h-[500px]" />;
   }
 
+  const filteredTasks = tasks.filter(t => {
+    if (priorityFilter.length > 0 && !priorityFilter.includes(t.priority)) return false;
+    if (assigneeFilter.length > 0 && !assigneeFilter.includes(t.assignee)) return false;
+    return true;
+  });
+
+  const visibleStatuses = statusFilter.length > 0 
+    ? STATUSES.filter(s => statusFilter.includes(s))
+    : STATUSES;
+
   return (
     <>
+      <div className="flex items-center gap-2 flex-wrap justify-start mb-4 px-4 lg:px-6">
+        {/* Status Filter */}
+        {(() => {
+          const isActive = statusFilter.length > 0;
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className={`h-9 border-dashed ${isActive ? "border-primary bg-primary/5 text-primary" : ""}`}
+                >
+                  <FilterIcon className="mr-2 h-4 w-4 opacity-50" />
+                  Status
+                  {isActive && (
+                    <>
+                      <div className="mx-2 h-4 w-[1px] bg-border" />
+                      <div className="flex gap-1">
+                        {statusFilter.length > 2 ? (
+                          <Badge variant="secondary" className="rounded-sm px-1 font-normal">
+                            {statusFilter.length} selecionados
+                          </Badge>
+                        ) : (
+                          statusFilter.map((v) => (
+                            <Badge variant="secondary" key={v} className="rounded-sm px-1 font-normal">
+                              {tFields(v)}
+                            </Badge>
+                          ))
+                        )}
+                      </div>
+                    </>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[200px]">
+                {STATUSES.map(v => {
+                  const isSelected = statusFilter.includes(v);
+                  return (
+                    <DropdownMenuCheckboxItem 
+                      key={v} 
+                      checked={isSelected}
+                      onCheckedChange={(checked) => {
+                        const next = checked ? [...statusFilter, v] : statusFilter.filter(c => c !== v);
+                        setStatusFilter(next);
+                      }}
+                    >
+                      {tFields(v)}
+                    </DropdownMenuCheckboxItem>
+                  )
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )
+        })()}
+
+        {/* Priority Filter */}
+        {(() => {
+          const isActive = priorityFilter.length > 0;
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className={`h-9 border-dashed ${isActive ? "border-primary bg-primary/5 text-primary" : ""}`}
+                >
+                  <FilterIcon className="mr-2 h-4 w-4 opacity-50" />
+                  {tTasks("priority")}
+                  {isActive && (
+                    <>
+                      <div className="mx-2 h-4 w-[1px] bg-border" />
+                      <div className="flex gap-1">
+                        {priorityFilter.length > 2 ? (
+                          <Badge variant="secondary" className="rounded-sm px-1 font-normal">
+                            {priorityFilter.length} selecionados
+                          </Badge>
+                        ) : (
+                          priorityFilter.map((v) => (
+                            <Badge variant="secondary" key={v} className="rounded-sm px-1 font-normal">
+                              {tFields(v)}
+                            </Badge>
+                          ))
+                        )}
+                      </div>
+                    </>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[200px]">
+                {["Low", "Medium", "High"].map(v => {
+                  const isSelected = priorityFilter.includes(v);
+                  return (
+                    <DropdownMenuCheckboxItem 
+                      key={v} 
+                      checked={isSelected}
+                      onCheckedChange={(checked) => {
+                        const next = checked ? [...priorityFilter, v] : priorityFilter.filter(c => c !== v);
+                        setPriorityFilter(next);
+                      }}
+                    >
+                      {tFields(v)}
+                    </DropdownMenuCheckboxItem>
+                  )
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )
+        })()}
+
+        {/* Assignee Filter */}
+        {(() => {
+          const isActive = assigneeFilter.length > 0;
+          const uniqueAssignees = Array.from(new Set(data.map(d => d.assignee))).map(name => {
+            const first = data.find(d => d.assignee === name);
+            return { name, avatar: first?.assigneeAvatar };
+          });
+
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className={`h-9 border-dashed ${isActive ? "border-primary bg-primary/5 text-primary" : ""}`}
+                >
+                  <FilterIcon className="mr-2 h-4 w-4 opacity-50" />
+                  {tTasks("assignee")}
+                  {isActive && (
+                    <>
+                      <div className="mx-2 h-4 w-[1px] bg-border" />
+                      <div className="flex gap-1">
+                        {assigneeFilter.length > 1 ? (
+                          <Badge variant="secondary" className="rounded-sm px-1 font-normal">
+                            {assigneeFilter.length} selecionados
+                          </Badge>
+                        ) : (
+                          assigneeFilter.map((v) => (
+                            <Badge variant="secondary" key={v || "unassigned"} className="rounded-sm px-1 font-normal">
+                              {v || tTasks("unassigned")}
+                            </Badge>
+                          ))
+                        )}
+                      </div>
+                    </>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-[200px]">
+                {uniqueAssignees.map(u => {
+                  const isSelected = assigneeFilter.includes(u.name);
+                  return (
+                    <DropdownMenuCheckboxItem 
+                      key={u.name || "unassigned"} 
+                      checked={isSelected}
+                      onCheckedChange={(checked) => {
+                        const next = checked ? [...assigneeFilter, u.name] : assigneeFilter.filter(c => c !== u.name);
+                        setAssigneeFilter(next);
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Avatar className="size-5">
+                          <AvatarImage src={u.avatar || undefined} />
+                          <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-semibold">
+                            {u.name ? u.name.substring(0, 2).toUpperCase() : "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{u.name || tTasks("unassigned")}</span>
+                      </div>
+                    </DropdownMenuCheckboxItem>
+                  )
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )
+        })()}
+      </div>
+
       <div className="w-full overflow-x-auto px-4 lg:px-6 pb-8">
         <DndContext
           sensors={sensors}
@@ -270,11 +472,11 @@ export function KanbanBoard({ data }: { data: Task[] }) {
           onDragEnd={handleDragEnd}
         >
           <div className="flex gap-6 h-full items-start">
-            {STATUSES.map((status) => (
+            {visibleStatuses.map((status) => (
               <KanbanColumn
                 key={status}
                 status={status}
-                tasks={tasks.filter((t) => t.status === status)}
+                tasks={filteredTasks.filter((t) => t.status === status)}
                 onTaskClick={handleTaskClick}
               />
             ))}

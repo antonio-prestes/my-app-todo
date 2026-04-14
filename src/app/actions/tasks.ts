@@ -16,10 +16,12 @@ async function getAuthUserId() {
 
 // Helper to check membership and role
 async function checkMembership(workspaceId: string, userId: string) {
-  const member = await db.query.workspaceMembers.findFirst({
-    where: and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId))
-  });
-  return member;
+  const result = await db.select()
+    .from(workspaceMembers)
+    .where(and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId)))
+    .limit(1);
+    
+  return result[0];
 }
 
 // Fetch tasks for a specific workspace

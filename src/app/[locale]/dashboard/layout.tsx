@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import React from "react";
 import { InviteOverlay } from "@/components/invite-overlay";
+import { InviteHandler } from "@/components/invite-handler";
 import { cookies } from "next/headers";
 
 export default async function DashboardLayout({
@@ -27,14 +28,12 @@ export default async function DashboardLayout({
 
   // If user is logged in AND has a pending invite, accept it automatically
   if (user && pendingInvite) {
-    const { acceptInvitation } = await import("@/app/actions/workspaces");
-    await acceptInvitation(pendingInvite);
-    
-    // Clear the cookie by setting it to expire
-    // Next.js layout doesn't let us modify cookies directly in the response phase,
-    // so we need to do it correctly. Wait, Server Actions allow setting cookies, but layout doesn't!
-    // We can't clear the cookie in layout directly without an Action, but we can just ignore it once accepted.
-    // However, the cookie will just expire.
+    try {
+      const { acceptInvitation } = await import("@/app/actions/workspaces");
+      await acceptInvitation(pendingInvite);
+    } catch (err) {
+      console.error("[DashboardLayout] Failed to auto-accept invitation:", err);
+    }
   }
 
   const sessionUser = user ? {
@@ -67,6 +66,7 @@ export default async function DashboardLayout({
         <main className="flex-1 overflow-hidden relative">
           {children}
           {!user && pendingInvite && <InviteOverlay />}
+          {user && pendingInvite && <InviteHandler />}
         </main>
       </SidebarInset>
     </SidebarProvider>

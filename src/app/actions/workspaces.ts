@@ -1,8 +1,8 @@
 "use server"
 
 import { db } from "@/db/db";
-import { workspaces, tasks, workspaceMembers, invitations } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { workspaces, tasks, workspaceMembers, invitations, users } from "@/db/schema";
+import { eq, and, inArray } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { cached, invalidateCache, invalidateTag, cacheKey } from "@/lib/cache";
@@ -22,31 +22,46 @@ export async function getWorkspaces() {
   return cached(
     cacheKey("workspaces", userId),
     async () => {
-      const memberRecords = await db.query.workspaceMembers.findMany({
-        where: eq(workspaceMembers.userId, userId),
-        with: {
-          workspace: {
-            with: {
-              tasks: {
-                columns: {
-                  assignee: true,
-                  assigneeAvatar: true,
-                }
-              }
-            }
-          }
-        }
-      });
+      // Fetch workspaces where user is a member
+      const memberRecords = await db.select({
+        id: workspaces.id,
+        name: workspaces.name,
+        description: workspaces.description,
+        emoji: workspaces.emoji,
+        userId: workspaces.userId,
+        createdAt: workspaces.createdAt,
+        role: workspaceMembers.role,
+      })
+      .from(workspaceMembers)
+      .innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
+      .where(eq(workspaceMembers.userId, userId));
 
-      // Transform data to include unique avatars and task counts
+      if (memberRecords.length === 0) return [];
+
+      const workspaceIds = memberRecords.map(m => m.id);
+
+      // Fetch limited task data for stats
+      const allTasks = await db.select({
+        workspaceId: tasks.workspaceId,
+        assigneeAvatar: tasks.assigneeAvatar,
+      })
+      .from(tasks)
+      .where(inArray(tasks.workspaceId, workspaceIds));
+
+      // Transform data
       const results = memberRecords.map(m => {
-        const ws = m.workspace;
-        // Collect unique avatars of assignees in this workspace
-        const uniqueAvatars = Array.from(new Set(ws.tasks.map(t => t.assigneeAvatar).filter(Boolean)));
+        const wsTasks = allTasks.filter(t => t.workspaceId === m.id);
+        const uniqueAvatars = Array.from(new Set(wsTasks.map(t => t.assigneeAvatar).filter(Boolean)));
+        
         return {
-          ...ws,
+          id: m.id,
+          name: m.name,
+          description: m.description,
+          emoji: m.emoji,
+          userId: m.userId,
+          createdAt: m.createdAt,
           role: m.role,
-          taskCount: ws.tasks.length,
+          taskCount: wsTasks.length,
           avatars: uniqueAvatars.slice(0, 4) as string[],
         };
       });
@@ -77,13 +92,22 @@ export async function getWorkspace(id: string) {
   return cached(
     cacheKey("workspace", userId, id),
     async () => {
-      const memberRecord = await db.query.workspaceMembers.findFirst({
-        where: and(eq(workspaceMembers.workspaceId, id), eq(workspaceMembers.userId, userId)),
-        with: {
-          workspace: true
-        }
-      });
-      return memberRecord ? { ...memberRecord.workspace, role: memberRecord.role } : null;
+      const result = await db.select({
+        id: workspaces.id,
+        name: workspaces.name,
+        description: workspaces.description,
+        emoji: workspaces.emoji,
+        userId: workspaces.userId,
+        createdAt: workspaces.createdAt,
+        role: workspaceMembers.role,
+      })
+      .from(workspaceMembers)
+      .innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
+      .where(and(eq(workspaceMembers.workspaceId, id), eq(workspaceMembers.userId, userId)))
+      .limit(1);
+
+      const record = result[0];
+      return record || null;
     },
     60 * 5,
     [`user:${userId}`],
@@ -100,25 +124,26 @@ export async function getWorkspaceMembers(workspaceId: string) {
     async () => {
       try {
         console.log(`[getWorkspaceMembers] Fetching for workspace: ${workspaceId}`);
-        // Get all members joined with their user details
-        const members = await db.query.workspaceMembers.findMany({
-          where: eq(workspaceMembers.workspaceId, workspaceId),
-          with: {
-            user: true
-          }
-        });
+        // Get all members joined with their user details using standard join
+        const members = await db.select({
+          userId: workspaceMembers.userId,
+          role: workspaceMembers.role,
+          name: users.name,
+          email: users.email,
+          avatar: users.avatarUrl,
+        })
+        .from(workspaceMembers)
+        .leftJoin(users, eq(workspaceMembers.userId, users.id))
+        .where(eq(workspaceMembers.workspaceId, workspaceId));
 
         console.log(`[getWorkspaceMembers] Found ${members.length} raw members:`, members.map(m => m.userId));
 
         return members.map(m => {
-          if (!m.user) {
-            console.warn(`[getWorkspaceMembers] WARNING: Missing user object for member ${m.userId}`);
-          }
           return {
             id: m.userId,
-            name: m.user?.name || "Unknown User",
-            email: m.user?.email || "No Email",
-            avatar: m.user?.avatarUrl || "https://github.com/shadcn.png",
+            name: m.name || "Unknown User",
+            email: m.email || "No Email",
+            avatar: m.avatar || "https://github.com/shadcn.png",
             role: m.role
           };
         });
@@ -167,9 +192,10 @@ export async function updateWorkspace(id: string, data: { name?: string; descrip
   if (!userId) throw new Error("Unauthorized");
 
   // Verify access (restrict to owner)
-  const member = await db.query.workspaceMembers.findFirst({
-    where: and(eq(workspaceMembers.workspaceId, id), eq(workspaceMembers.userId, userId))
-  });
+  const [member] = await db.select()
+    .from(workspaceMembers)
+    .where(and(eq(workspaceMembers.workspaceId, id), eq(workspaceMembers.userId, userId)))
+    .limit(1);
 
   if (!member || member.role !== "owner") {
     throw new Error("Only workspace owners can update workspace configurations");
@@ -194,9 +220,10 @@ export async function deleteWorkspace(id: string) {
   if (!userId) throw new Error("Unauthorized");
 
   // Verify access
-  const member = await db.query.workspaceMembers.findFirst({
-    where: and(eq(workspaceMembers.workspaceId, id), eq(workspaceMembers.userId, userId))
-  });
+  const [member] = await db.select()
+    .from(workspaceMembers)
+    .where(and(eq(workspaceMembers.workspaceId, id), eq(workspaceMembers.userId, userId)))
+    .limit(1);
 
   if (!member || member.role !== "owner") {
     throw new Error("Only workspace owners can delete workspaces");
@@ -218,19 +245,23 @@ export async function deleteWorkspace(id: string) {
 // Invite user
 import { sendInviteEmail } from "@/lib/email/send-invite";
 import { v4 as uuidv4 } from "uuid";
-import { users } from "@/db/schema";
 
 export async function inviteUser(workspaceId: string, email: string) {
   const userId = await getAuthUserId();
   if (!userId) throw new Error("Unauthorized");
 
   // Verify access (restrict to owner)
-  const member = await db.query.workspaceMembers.findFirst({
-    where: and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId)),
-    with: {
-      workspace: true
-    }
-  });
+  const [memberResult] = await db.select({
+    workspaceId: workspaces.id,
+    workspaceName: workspaces.name,
+    role: workspaceMembers.role
+  })
+  .from(workspaceMembers)
+  .innerJoin(workspaces, eq(workspaceMembers.workspaceId, workspaces.id))
+  .where(and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId)))
+  .limit(1);
+
+  const member = memberResult;
 
   if (!member || member.role !== "owner") {
     throw new Error("Somente proprietários podem convidar membros.");
@@ -243,9 +274,10 @@ export async function inviteUser(workspaceId: string, email: string) {
   // Check if user is already a member
   const [existingUser] = await db.select().from(users).where(eq(users.email, email));
   if (existingUser) {
-    const existingMember = await db.query.workspaceMembers.findFirst({
-      where: and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, existingUser.id))
-    });
+    const [existingMember] = await db.select()
+      .from(workspaceMembers)
+      .where(and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, existingUser.id)))
+      .limit(1);
     if (existingMember) throw new Error("Este usuário já faz parte do workspace.");
   }
 
@@ -264,7 +296,7 @@ export async function inviteUser(workspaceId: string, email: string) {
   const emailRes = await sendInviteEmail({
     email,
     inviterName,
-    workspaceName: member.workspace.name,
+    workspaceName: member.workspaceName,
     inviteToken: token,
   });
 
@@ -275,46 +307,53 @@ export async function inviteUser(workspaceId: string, email: string) {
 
 // Accept Invitation
 export async function acceptInvitation(token: string) {
-  const userId = await getAuthUserId();
-  if (!userId) throw new Error("Unauthorized");
+  try {
+    const userId = await getAuthUserId();
+    if (!userId) return { error: "Unauthorized" };
 
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+    console.log(`[acceptInvitation] Processing token: ${token} for user: ${userId}`);
 
-  // Find invitation
-  const invite = await db.query.invitations.findFirst({
-    where: and(eq(invitations.token, token), eq(invitations.status, "pending")),
-  });
+    // Find invitation using standard select
+    const inviteResult = await db.select()
+      .from(invitations)
+      .where(and(eq(invitations.token, token), eq(invitations.status, "pending")))
+      .limit(1);
 
-  if (!invite) return { error: "Convite inválido ou já foi aceito." };
+    const invite = inviteResult[0];
 
-  // Make sure the email matches the invite (optional, but good for security)
-  if (invite.email.toLowerCase() !== user?.email?.toLowerCase()) {
-    return { error: "Este convite foi enviado para outro e-mail." };
+    if (!invite) {
+      console.warn(`[acceptInvitation] No pending invitation found for token: ${token}`);
+      return { error: "Convite inválido ou já foi aceito." };
+    }
+
+    // Check if they are already a member
+    const [existingMember] = await db.select()
+      .from(workspaceMembers)
+      .where(and(eq(workspaceMembers.workspaceId, invite.workspaceId), eq(workspaceMembers.userId, userId)))
+      .limit(1);
+
+    if (!existingMember) {
+      // Insert member
+      await db.insert(workspaceMembers).values({
+        workspaceId: invite.workspaceId,
+        userId: userId,
+        role: invite.role,
+      });
+      console.log(`[acceptInvitation] Added user ${userId} to workspace ${invite.workspaceId}`);
+    }
+
+    // Update invite status
+    await db.update(invitations)
+      .set({ status: "accepted" })
+      .where(eq(invitations.id, invite.id));
+
+    // Invalidate caches
+    await invalidateCache(cacheKey("workspaces", userId));
+    
+    return { success: true };
+  } catch (err) {
+    console.error(`[acceptInvitation] Critical Error:`, err);
+    return { error: "Erro interno ao aceitar convite." };
   }
-
-  // Check if they are already a member
-  const member = await db.query.workspaceMembers.findFirst({
-    where: and(eq(workspaceMembers.workspaceId, invite.workspaceId), eq(workspaceMembers.userId, userId))
-  });
-
-  if (!member) {
-    // Insert member
-    await db.insert(workspaceMembers).values({
-      workspaceId: invite.workspaceId,
-      userId: userId,
-      role: invite.role,
-    });
-  }
-
-  // Update invite status
-  await db.update(invitations)
-    .set({ status: "accepted" })
-    .where(eq(invitations.id, invite.id));
-
-  // Invalidate caches
-  await invalidateCache(cacheKey("workspaces", userId));
-  
-  return { success: true };
 }
 
