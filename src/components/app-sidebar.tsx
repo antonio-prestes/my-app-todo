@@ -29,6 +29,7 @@ interface Workspace {
   id: string;
   name: string;
   description: string | null;
+  emoji: string | null;
 }
 
 export function AppSidebar({

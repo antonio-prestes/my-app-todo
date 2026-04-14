@@ -5,6 +5,7 @@ import { tasks } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { cached, invalidateCache, cacheKey } from "@/lib/cache";
 
 // Helper to get authenticated user ID
 async function getAuthUserId() {
@@ -18,10 +19,17 @@ export async function getTasks(workspaceId: string) {
   const userId = await getAuthUserId();
   if (!userId) throw new Error("Unauthorized");
 
-  const results = await db.select().from(tasks)
-    .where(and(eq(tasks.userId, userId), eq(tasks.workspaceId, workspaceId)))
-    .orderBy(tasks.createdAt);
-  return results;
+  return cached(
+    cacheKey("tasks", userId, workspaceId),
+    async () => {
+      const results = await db.select().from(tasks)
+        .where(and(eq(tasks.userId, userId), eq(tasks.workspaceId, workspaceId)))
+        .orderBy(tasks.createdAt);
+      return results;
+    },
+    60 * 5, // 5 minutes TTL
+    [`user:${userId}`],
+  );
 }
 
 // Create
@@ -52,6 +60,12 @@ export async function createTask(data: {
     workspaceId: data.workspaceId,
   }).returning();
 
+  // Invalidate tasks cache for this workspace + workspace list (task count changed)
+  await invalidateCache(
+    cacheKey("tasks", userId, data.workspaceId),
+    cacheKey("workspaces", userId),
+  );
+
   revalidatePath("/dashboard", "layout");
   return result[0];
 }
@@ -61,10 +75,20 @@ export async function updateTaskStatus(id: string, newStatus: string) {
   const userId = await getAuthUserId();
   if (!userId) throw new Error("Unauthorized");
 
+  // Get the task first to know which workspace to invalidate
+  const [task] = await db.select({ workspaceId: tasks.workspaceId })
+    .from(tasks)
+    .where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+
   await db.update(tasks)
     .set({ status: newStatus })
     .where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
-  
+
+  // Invalidate tasks cache for the affected workspace
+  if (task) {
+    await invalidateCache(cacheKey("tasks", userId, task.workspaceId));
+  }
+
   return { success: true };
 }
 
@@ -73,10 +97,23 @@ export async function updateTask(id: string, data: Partial<typeof tasks.$inferIn
   const userId = await getAuthUserId();
   if (!userId) throw new Error("Unauthorized");
 
+  // Get the task first to know which workspace to invalidate
+  const [task] = await db.select({ workspaceId: tasks.workspaceId })
+    .from(tasks)
+    .where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+
   await db.update(tasks)
     .set(data)
     .where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
-  
+
+  // Invalidate tasks and workspace list (assignee avatars may have changed)
+  if (task) {
+    await invalidateCache(
+      cacheKey("tasks", userId, task.workspaceId),
+      cacheKey("workspaces", userId),
+    );
+  }
+
   revalidatePath("/dashboard", "layout");
   return { success: true };
 }
@@ -86,7 +123,21 @@ export async function deleteTask(id: string) {
   const userId = await getAuthUserId();
   if (!userId) throw new Error("Unauthorized");
 
+  // Get the task first to know which workspace to invalidate
+  const [task] = await db.select({ workspaceId: tasks.workspaceId })
+    .from(tasks)
+    .where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+
   await db.delete(tasks).where(and(eq(tasks.id, id), eq(tasks.userId, userId)));
+
+  // Invalidate tasks cache + workspace list (task count changed)
+  if (task) {
+    await invalidateCache(
+      cacheKey("tasks", userId, task.workspaceId),
+      cacheKey("workspaces", userId),
+    );
+  }
+
   revalidatePath("/dashboard", "layout");
   return { success: true };
 }

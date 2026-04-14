@@ -1,68 +1,53 @@
 # Task Manager (Notion-Style)
 
-Este é um projeto desenvolvido inteiramente para **testar e aprimorar conhecimentos** de desenvolvimento web moderno com foco na interface do usuário (UI) e experiência do usuário (UX), replicando nativamente os conceitos dinâmicos de arquitetura presentes no Notion.
+Um gerenciador de tarefas moderno inspirado no Notion, com workspaces, quadro Kanban, tabela interativa e suporte a múltiplos idiomas.
 
-## Tecnologias utilizadas
+## Tech Stack
 
-- **[React](https://react.dev/)**
-- **[Next.js (App Router)](https://nextjs.org/)**
-- **[Supabase](https://supabase.com/)** (Autenticação, Banco de Dados, Storage)
-- **[Shadcn UI](https://ui.shadcn.com/)**
-- **[Tailwind CSS](https://tailwindcss.com/)**
-- **[next-intl](https://next-intl-docs.vercel.app/)**
-- **[@dnd-kit](https://dndkit.com/)**
-- **[Drizzle ORM](https://orm.drizzle.team/)** (PostgreSQL)
-- **[react-easy-crop](https://github.com/valentinvichnal/react-easy-crop)** (Edição de Avatares)
+| Camada | Tecnologia |
+|--------|------------|
+| **Frontend** | React 19, Next.js 16 (App Router), Tailwind CSS, Shadcn UI |
+| **Backend** | Next.js Server Actions, Drizzle ORM |
+| **Banco de Dados** | PostgreSQL (Supabase) |
+| **Cache** | Upstash Redis (REST) |
+| **Autenticação** | Supabase Auth (SSR cookies) |
+| **Storage** | Supabase Storage (avatares) |
+| **i18n** | next-intl (pt-BR, en) |
+| **Drag & Drop** | @dnd-kit |
 
-## Como executar o projeto (primeira vez após clonar)
+## Funcionalidades
 
-Requisitos: **Node.js** e um projeto **Supabase** ativo.
+- ✅ Autenticação com verificação de e-mail (OTP)
+- ✅ Workspaces com ícone emoji personalizável
+- ✅ Visualização em Tabela (TanStack Table) e Kanban (drag & drop)
+- ✅ CRUD completo de tasks com status, prioridade, tags e prazo
+- ✅ Edição de perfil com crop de avatar
+- ✅ Cache distribuído com Redis (Upstash) e invalidação cirúrgica
+- ✅ Internacionalização completa (Português e Inglês)
+- ✅ Row Level Security (RLS) em todas as tabelas
 
-1. Clone o repositório e entre na pasta raiz.
-2. Instale as dependências:
+## Quick Start
 
 ```bash
+# 1. Instalar dependências
 npm install
-```
 
-3. **Variáveis de ambiente**
-
-```bash
+# 2. Configurar variáveis de ambiente
 cp .env.example .env.local
-```
+# Edite com suas credenciais do Supabase e Upstash Redis
 
-Edite o `.env.local` com as credenciais do seu projeto Supabase.
-
-4. **Configuração Automática do Banco e Storage**
-
-Este comando irá criar as tabelas (via Drizzle), configurar o bucket de `avatars` no Storage e definir as políticas de segurança (RLS) automaticamente.
-
-```bash
+# 3. Configurar banco + storage + RLS
 npm run db:setup
-```
 
-5. Inicie o app:
-
-```bash
+# 4. Iniciar
 npm run dev
 ```
 
-6. Abra [http://localhost:3000](http://localhost:3000).
+Abra [http://localhost:3000](http://localhost:3000).
 
----
+## Documentação
 
-## Detalhes do Projeto
+Para detalhes sobre arquitetura, regras de negócio, estratégia de cache e schema do banco de dados, consulte a documentação completa:
 
-### Fluxo de Autenticação
-O projeto utiliza o Supabase Auth. Quando novos usuários são criados, o Supabase gerencia a verificação de e-mail. O login é realizado via cookies seguros no lado do servidor (SSR).
-
-### Edição de Perfil
-O sistema permite alterar nome e avatar com ferramenta de crop circular. As imagens são armazenadas no Supabase Storage e sincronizadas automaticamente com o banco de dados.
-
-### Comandos de Banco de Dados
-
-| Comando | Descrição |
-|--------|-----------|
-| `npm run db:setup` | **(Recomendado)** Sincroniza tabelas e configura Storage/RLS do Supabase. |
-| `npm run db:push` | Sincroniza o schema do Drizzle com o banco de dados. |
-| `npm run db:studio` | Abre o Drizzle Studio para visualização dos dados. |
+- 📐 [Arquitetura e Regras de Negócio](./DOCS/architecture.md)
+- 🌐 [Guia de Internacionalização](./DOCS/i18n-guidelines.md)

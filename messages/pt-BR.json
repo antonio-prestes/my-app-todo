@@ -6,7 +6,8 @@
     "back": "Voltar",
     "cancel": "Cancelar",
     "save": "Salvar",
-    "delete": "Excluir"
+    "delete": "Excluir",
+    "select": "Selecione..."
   },
   "Auth": {
     "welcome": "Bem-vindo de volta",

@@ -1,13 +1,10 @@
-import { AppSidebar } from "@/components/app-sidebar";
 import { DataTable } from "@/components/data-table";
 import { KanbanBoard } from "@/components/kanban-board";
-import { SiteHeader } from "@/components/site-header";
 import { WorkspaceTabs } from "@/components/workspace-tabs";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { getTasks } from "@/app/actions/tasks";
-import { getWorkspace, getWorkspaces } from "@/app/actions/workspaces";
+import { getWorkspace } from "@/app/actions/workspaces";
 import { TaskDialog } from "@/components/task-dialog";
 import { CirclePlusIcon } from "lucide-react";
 import { getTranslations } from "next-intl/server";
@@ -45,11 +42,8 @@ export default async function WorkspacePage({
     notFound();
   }
 
-  // Fetch all workspaces for sidebar + tasks for this workspace
-  const [allWorkspaces, dbTasks] = await Promise.all([
-    getWorkspaces(),
-    getTasks(workspaceId),
-  ]);
+  // Fetch tasks for this workspace
+  const dbTasks = await getTasks(workspaceId);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
