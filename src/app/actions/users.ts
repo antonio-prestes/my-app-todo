@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { invalidateTag } from "@/lib/cache"
 
 export async function updateProfile(data: { name: string, avatar_url: string }) {
   const supabase = await createClient()
@@ -38,7 +39,24 @@ export async function updateProfile(data: { name: string, avatar_url: string }) 
     return { error: dbError.message }
   }
 
-  // 4. Revalidate cache
+  // 4. Sycn denormalized assignee profile in their tasks
+  const { error: tasksDbError } = await supabase
+    .from('tasks')
+    .update({
+      assignee: data.name,
+      assignee_avatar: data.avatar_url
+    })
+    .eq('user_id', user.id)
+
+  if (tasksDbError) {
+    console.error("Server Action Tasks DB Update Error:", tasksDbError)
+    // Don't throw, since profile was already updated, but log it
+  }
+
+  // 5. Invalidate tag-based caching to refresh all workspaces & tasks referencing the user
+  await invalidateTag(`user:${user.id}`);
+
+  // 6. Revalidate Next.js cache
   revalidatePath('/', 'layout')
   
   return { success: true }

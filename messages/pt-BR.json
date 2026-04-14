@@ -30,6 +30,13 @@
     "haveAccount": "Já tem uma conta?",
     "loginLink": "Entrar",
     "emailAlreadyRegistered": "E-mail já cadastrado. Por favor, vá para a tela de login.",
+    "confirmPassword": "Confirmar Senha",
+    "passwordMismatch": "As senhas não coincidem.",
+    "strengthVeryWeak": "Muito fraca",
+    "strengthWeak": "Fraca",
+    "strengthFair": "Razoável",
+    "strengthStrong": "Forte",
+    "strengthVeryStrong": "Muito forte",
     "confirmEmailMessage": "Conta criada! Por favor, verifique seu e-mail para o link de confirmação."
   },
   "Dashboard": {
@@ -118,7 +125,9 @@
     "adjustPhoto": "Ajuste sua foto de perfil.",
     "clickToChangePhoto": "Clique na foto para alterar",
     "fullName": "Nome completo",
-    "email": "E-mail"
+    "email": "E-mail",
+    "updateSuccess": "Perfil atualizado com sucesso!",
+    "updateError": "Erro ao atualizar perfil."
   },
   "Stats": {
     "totalRevenue": "Receita Total",

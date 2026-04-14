@@ -30,6 +30,13 @@
     "haveAccount": "Already have an account?",
     "loginLink": "Login",
     "emailAlreadyRegistered": "Email already registered. Please go to the login page.",
+    "confirmPassword": "Confirm Password",
+    "passwordMismatch": "Passwords do not match.",
+    "strengthVeryWeak": "Very weak",
+    "strengthWeak": "Weak",
+    "strengthFair": "Fair",
+    "strengthStrong": "Strong",
+    "strengthVeryStrong": "Very strong",
     "confirmEmailMessage": "Account created! Please check your email for the confirmation link."
   },
   "Dashboard": {
@@ -118,7 +125,9 @@
     "adjustPhoto": "Adjust your profile photo.",
     "clickToChangePhoto": "Click photo to change",
     "fullName": "Full Name",
-    "email": "Email"
+    "email": "Email",
+    "updateSuccess": "Profile updated successfully!",
+    "updateError": "Error updating profile."
   },
   "Stats": {
     "totalRevenue": "Total Revenue",

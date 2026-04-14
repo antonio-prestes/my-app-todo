@@ -17,7 +17,76 @@ import { Input } from "@/components/ui/input"
 import { LanguageSwitcher } from "@/components/language-switcher"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
+import { CheckIcon, XIcon } from "lucide-react"
 
+// --- Password Strength Logic ---
+function getPasswordStrength(password: string): number {
+  if (!password) return 0
+  let score = 0
+  if (password.length >= 6) score += 1
+  if (password.length >= 10) score += 1
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1
+  if (/\d/.test(password)) score += 1
+  if (/[^a-zA-Z0-9]/.test(password)) score += 1
+  return score // 0 to 5
+}
+
+const strengthColors = [
+  "bg-zinc-300 dark:bg-zinc-700",    // 0 - empty
+  "bg-red-500",                       // 1 - very weak
+  "bg-orange-500",                    // 2 - weak
+  "bg-yellow-500",                    // 3 - fair
+  "bg-emerald-500",                   // 4 - strong
+  "bg-green-500",                     // 5 - very strong
+]
+
+function PasswordStrengthMeter({ password }: { password: string }) {
+  const t = useTranslations("Auth")
+  const strength = getPasswordStrength(password)
+
+  const labels = [
+    "",
+    t("strengthVeryWeak"),
+    t("strengthWeak"),
+    t("strengthFair"),
+    t("strengthStrong"),
+    t("strengthVeryStrong"),
+  ]
+
+  const textColors = [
+    "text-zinc-400",
+    "text-red-500",
+    "text-orange-500",
+    "text-yellow-600 dark:text-yellow-400",
+    "text-emerald-500",
+    "text-green-500",
+  ]
+
+  if (!password) return null
+
+  return (
+    <div className="flex flex-col gap-1.5 mt-1.5">
+      <div className="flex gap-1 h-1.5 rounded-full overflow-hidden">
+        {[1, 2, 3, 4, 5].map((level) => (
+          <div
+            key={level}
+            className={cn(
+              "flex-1 rounded-full transition-all duration-300",
+              strength >= level
+                ? strengthColors[strength]
+                : "bg-zinc-200 dark:bg-zinc-800"
+            )}
+          />
+        ))}
+      </div>
+      <span className={cn("text-xs font-medium transition-colors", textColors[strength])}>
+        {labels[strength]}
+      </span>
+    </div>
+  )
+}
+
+// --- Signup Form ---
 export function SignupForm({
   className,
   ...props
@@ -26,17 +95,26 @@ export function SignupForm({
   const router = useRouter()
   const [error, setError] = React.useState("")
   const [loading, setLoading] = React.useState(false)
+  const [password, setPassword] = React.useState("")
+  const [confirmPassword, setConfirmPassword] = React.useState("")
   const supabase = createClient()
+
+  const passwordsMatch = confirmPassword.length === 0 || password === confirmPassword
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setError("")
+
+    if (password !== confirmPassword) {
+      setError(t("passwordMismatch"))
+      return
+    }
+
     setLoading(true)
 
     const formData = new FormData(e.currentTarget)
     const name = formData.get("name") as string
     const email = formData.get("email") as string
-    const password = formData.get("password") as string
 
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
@@ -107,10 +185,48 @@ export function SignupForm({
               </Field>
               <Field>
                 <FieldLabel htmlFor="password">{t("password")}</FieldLabel>
-                <Input id="password" name="password" type="password" required />
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <PasswordStrengthMeter password={password} />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="confirmPassword" className="flex items-center gap-2">
+                  {t("confirmPassword")}
+                  {confirmPassword.length > 0 && (
+                    passwordsMatch ? (
+                      <CheckIcon className="size-4 text-green-500" />
+                    ) : (
+                      <XIcon className="size-4 text-red-500" />
+                    )
+                  )}
+                </FieldLabel>
+                <Input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className={cn(
+                    confirmPassword.length > 0 && !passwordsMatch && "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {confirmPassword.length > 0 && !passwordsMatch && (
+                  <p className="text-xs text-red-500 mt-1">{t("passwordMismatch")}</p>
+                )}
               </Field>
               <Field className="mt-2">
-                <Button type="submit" disabled={loading} className="w-full">
+                <Button
+                  type="submit"
+                  disabled={loading || !passwordsMatch || password.length === 0}
+                  className="w-full"
+                >
                   {loading ? "..." : t("signUpButton")}
                 </Button>
               </Field>
