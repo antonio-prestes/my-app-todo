@@ -38,7 +38,7 @@ export function SignupForm({
     const email = formData.get("email") as string
     const password = formData.get("password") as string
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -49,7 +49,14 @@ export function SignupForm({
     })
 
     if (signUpError) {
-      setError(signUpError.message)
+      if (signUpError.message === "User already registered" || signUpError.message.includes("already registered")) {
+        setError(t("emailAlreadyRegistered"))
+      } else {
+        setError(signUpError.message)
+      }
+      setLoading(false)
+    } else if (data?.user && data.user.identities && data.user.identities.length === 0) {
+      setError(t("emailAlreadyRegistered"))
       setLoading(false)
     } else {
       toast.success(t("confirmEmailMessage") || "Check your email for the confirmation link!")

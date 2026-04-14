@@ -29,6 +29,7 @@
     "signUpButton": "Criar Conta",
     "haveAccount": "Já tem uma conta?",
     "loginLink": "Entrar",
+    "emailAlreadyRegistered": "E-mail já cadastrado. Por favor, vá para a tela de login.",
     "confirmEmailMessage": "Conta criada! Por favor, verifique seu e-mail para o link de confirmação."
   },
   "Dashboard": {
